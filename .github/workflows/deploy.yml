@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy Audio-Photo Journal to GitHub Pages
 
 on:
   push:
@@ -11,14 +11,12 @@ permissions:
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skipping runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+# Allow only one concurrent deployment
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
-  # Single deploy job since it's a static site with no build process needed
   deploy:
     environment:
       name: github-pages
@@ -31,11 +29,39 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v5
         
-      - name: Upload Artifact
+      - name: Prepare web app for deployment
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Repository contents:"
+          ls -la
+          
+          # Create deployment directory and copy essential web app files
+          mkdir -p deploy
+          
+          # Copy core web app files (exclude development and backup files)
+          cp index.html deploy/
+          cp *.js deploy/ 2>/dev/null || echo "No JS files to copy"
+          cp styles.css mobile.css photo-viewer.css deploy/ 2>/dev/null || echo "No CSS files to copy"
+          cp manifest.json deploy/
+          cp *.png deploy/ 2>/dev/null || echo "No PNG files to copy"
+          cp -r icons deploy/ 2>/dev/null || echo "No icons directory"
+          
+          # Exclude development files
+          rm -f deploy/*-original.* deploy/*-enhanced.* deploy/*-improved.* deploy/*-broken.* deploy/*-fixed.* deploy/debug.html deploy/demo.html deploy/ai-debug.html 2>/dev/null || true
+          
+          echo "Deploy directory contents:"
+          ls -la deploy/
+          
+          echo "Verifying essential files:"
+          [ -f deploy/index.html ] && echo "✅ index.html" || echo "❌ index.html missing"
+          [ -f deploy/styles.css ] && echo "✅ styles.css" || echo "❌ styles.css missing"
+          [ -f deploy/app.js ] && echo "✅ app.js" || echo "❌ app.js missing"
+          [ -f deploy/manifest.json ] && echo "✅ manifest.json" || echo "❌ manifest.json missing"
+          
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          # Upload entire repository
-          path: '.'
+          path: './deploy'
           
       - name: Deploy to GitHub Pages
         id: deployment
