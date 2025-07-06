@@ -1,4 +1,4 @@
-name: Deploy Audio-Photo Journal to GitHub Pages
+name: Deploy to GitHub Pages
 
 on:
   push:
@@ -22,46 +22,58 @@ jobs:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
         
       - name: Setup Pages
-        uses: actions/configure-pages@v5
+        uses: actions/configure-pages@v4
         
-      - name: Prepare web app for deployment
+      - name: Create minimal deployment
         run: |
-          echo "Current directory: $(pwd)"
-          echo "Repository contents:"
-          ls -la
+          echo "📁 Creating deployment directory..."
+          mkdir -p _site
           
-          # Create deployment directory and copy essential web app files
-          mkdir -p deploy
+          # Copy only essential files with error handling
+          echo "📄 Copying HTML files..."
+          find . -name "*.html" -not -path "./.git/*" -not -path "./.*" -exec cp {} _site/ \; || echo "No HTML files found"
           
-          # Copy core web app files (exclude development and backup files)
-          cp index.html deploy/
-          cp *.js deploy/ 2>/dev/null || echo "No JS files to copy"
-          cp styles.css mobile.css photo-viewer.css deploy/ 2>/dev/null || echo "No CSS files to copy"
-          cp manifest.json deploy/
-          cp *.png deploy/ 2>/dev/null || echo "No PNG files to copy"
-          cp -r icons deploy/ 2>/dev/null || echo "No icons directory"
+          echo "📱 Copying JavaScript files..."
+          find . -name "*.js" -not -path "./.git/*" -not -path "./.*" -exec cp {} _site/ \; || echo "No JS files found"
           
-          # Exclude development files
-          rm -f deploy/*-original.* deploy/*-enhanced.* deploy/*-improved.* deploy/*-broken.* deploy/*-fixed.* deploy/debug.html deploy/demo.html deploy/ai-debug.html 2>/dev/null || true
+          echo "🎨 Copying CSS files..."
+          find . -name "*.css" -not -path "./.git/*" -not -path "./.*" -exec cp {} _site/ \; || echo "No CSS files found"
           
-          echo "Deploy directory contents:"
-          ls -la deploy/
+          echo "⚙️ Copying config files..."
+          cp manifest.json _site/ 2>/dev/null || echo "No manifest.json"
+          cp *.png _site/ 2>/dev/null || echo "No PNG files"
           
-          echo "Verifying essential files:"
-          [ -f deploy/index.html ] && echo "✅ index.html" || echo "❌ index.html missing"
-          [ -f deploy/styles.css ] && echo "✅ styles.css" || echo "❌ styles.css missing"
-          [ -f deploy/app.js ] && echo "✅ app.js" || echo "❌ app.js missing"
-          [ -f deploy/manifest.json ] && echo "✅ manifest.json" || echo "❌ manifest.json missing"
+          echo "🖼️ Copying icons..."
+          cp -r icons _site/ 2>/dev/null || echo "No icons directory"
+          
+          # Clean up development files
+          echo "🧹 Cleaning development files..."
+          rm -f _site/*-original.* _site/*-enhanced.* _site/*-improved.* _site/*-broken.* _site/*-fixed.* 2>/dev/null || true
+          rm -f _site/debug.html _site/demo.html _site/ai-debug.html _site/launch.sh 2>/dev/null || true
+          
+          echo "✅ Final deployment contents:"
+          ls -la _site/
+          
+          # Verify critical files
+          if [ ! -f "_site/index.html" ]; then
+            echo "❌ Critical: index.html missing!"
+            exit 1
+          fi
+          
+          echo "🎉 Deployment ready!"
           
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: './deploy'
+          path: './_site'
           
       - name: Deploy to GitHub Pages
         id: deployment
