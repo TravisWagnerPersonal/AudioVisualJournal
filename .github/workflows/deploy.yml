@@ -11,70 +11,62 @@ permissions:
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment
+# Allow only one concurrent deployment, skip runs queued between the run in-progress and latest queued.
+# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
 concurrency:
   group: "pages"
   cancel-in-progress: false
 
 jobs:
-  deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  # Build job
+  build:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
         
       - name: Setup Pages
         uses: actions/configure-pages@v4
         
-      - name: Create minimal deployment
+      - name: Build site
         run: |
-          echo "📁 Creating deployment directory..."
+          echo "📁 Creating build directory..."
           mkdir -p _site
           
-          # Copy only essential files with error handling
-          echo "📄 Copying HTML files..."
-          find . -name "*.html" -not -path "./.git/*" -not -path "./.*" -exec cp {} _site/ \; || echo "No HTML files found"
+          echo "📄 Copying core files..."
+          cp index.html _site/
+          cp *.js _site/ 2>/dev/null || echo "No JS files found"
+          cp *.css _site/ 2>/dev/null || echo "No CSS files found"
+          cp *.json _site/ 2>/dev/null || echo "No JSON files found"
+          cp *.png _site/ 2>/dev/null || echo "No PNG files found"
           
-          echo "📱 Copying JavaScript files..."
-          find . -name "*.js" -not -path "./.git/*" -not -path "./.*" -exec cp {} _site/ \; || echo "No JS files found"
-          
-          echo "🎨 Copying CSS files..."
-          find . -name "*.css" -not -path "./.git/*" -not -path "./.*" -exec cp {} _site/ \; || echo "No CSS files found"
-          
-          echo "⚙️ Copying config files..."
-          cp manifest.json _site/ 2>/dev/null || echo "No manifest.json"
-          cp *.png _site/ 2>/dev/null || echo "No PNG files"
-          
-          echo "🖼️ Copying icons..."
-          cp -r icons _site/ 2>/dev/null || echo "No icons directory"
-          
-          # Clean up development files
-          echo "🧹 Cleaning development files..."
-          rm -f _site/*-original.* _site/*-enhanced.* _site/*-improved.* _site/*-broken.* _site/*-fixed.* 2>/dev/null || true
-          rm -f _site/debug.html _site/demo.html _site/ai-debug.html _site/launch.sh 2>/dev/null || true
-          
-          echo "✅ Final deployment contents:"
-          ls -la _site/
-          
-          # Verify critical files
-          if [ ! -f "_site/index.html" ]; then
-            echo "❌ Critical: index.html missing!"
-            exit 1
+          echo "🖼️ Copying icons directory..."
+          if [ -d "icons" ]; then
+            cp -r icons _site/
+            echo "✅ Icons copied successfully"
+          else
+            echo "⚠️ No icons directory found"
           fi
           
-          echo "🎉 Deployment ready!"
+          echo "🧹 Cleaning up unwanted files..."
+          rm -f _site/launch.sh _site/debug.html _site/demo.html 2>/dev/null || true
+          
+          echo "✅ Build complete! Contents:"
+          ls -la _site/
           
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
           path: './_site'
-          
+
+  # Deployment job
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4 
