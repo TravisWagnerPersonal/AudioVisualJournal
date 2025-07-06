@@ -95,10 +95,30 @@
                 <div class="create-header">
                     <button id="cancel-create" class="header-btn">Cancel</button>
                     <h2 id="create-title">New Entry</h2>
-                    <button id="save-entry" class="header-btn save-btn">Save</button>
+                    <div class="create-header-actions">
+                        <button id="ai-assist-btn" class="header-btn ai-btn" title="AI Assistant">🤖</button>
+                        <button id="save-entry" class="header-btn save-btn">Save</button>
+                    </div>
                 </div>
                 
                 <div class="create-content">
+                    <!-- AI Assistant Panel -->
+                    <div id="ai-panel" class="ai-panel hidden">
+                        <div class="ai-panel-header">
+                            <h3>🤖 AI Assistant</h3>
+                            <button id="ai-panel-close" class="ai-close-btn">×</button>
+                        </div>
+                        <div class="ai-panel-content">
+                            <div class="ai-status" id="ai-status">Ready to help analyze your photos and audio!</div>
+                            <div class="ai-actions">
+                                <button id="ai-analyze-photo" class="ai-action-btn">📷 Analyze Photos</button>
+                                <button id="ai-transcribe-audio" class="ai-action-btn">🎤 Transcribe Audio</button>
+                                <button id="ai-generate-entry" class="ai-action-btn primary">✨ Generate Entry</button>
+                            </div>
+                            <div id="ai-results" class="ai-results hidden"></div>
+                        </div>
+                    </div>
+
                     <!-- Title Input -->
                     <div class="input-group">
                         <label for="entry-title">Title</label>
@@ -107,7 +127,10 @@
                     
                     <!-- Photo Section -->
                     <div class="media-section">
-                        <h3>Photos</h3>
+                        <div class="section-header">
+                            <h3>Photos</h3>
+                            <button id="ai-photo-analyze" class="ai-mini-btn" title="Analyze with AI">🤖</button>
+                        </div>
                         <div class="photo-controls">
                             <button id="take-photo" class="media-btn">
                                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -126,11 +149,15 @@
                             </button>
                         </div>
                         <div id="photo-preview" class="photo-preview"></div>
+                        <div id="photo-analysis" class="ai-analysis hidden"></div>
                     </div>
                     
                     <!-- Audio Section -->
                     <div class="media-section">
-                        <h3>Audio Recording</h3>
+                        <div class="section-header">
+                            <h3>Audio Recording</h3>
+                            <button id="ai-speech-btn" class="ai-mini-btn" title="Live Speech Recognition">🎤</button>
+                        </div>
                         <div class="audio-controls">
                             <button id="record-btn" class="record-btn">
                                 <span class="record-icon"></span>
@@ -139,18 +166,31 @@
                             <div id="recording-timer" class="recording-timer hidden">00:00</div>
                         </div>
                         <div id="audio-preview" class="audio-preview"></div>
+                        <div id="speech-transcription" class="speech-transcription hidden">
+                            <div class="transcription-header">
+                                <span>Live Transcription:</span>
+                                <button id="stop-speech" class="stop-speech-btn">Stop</button>
+                            </div>
+                            <div id="transcription-text" class="transcription-text"></div>
+                        </div>
                     </div>
                     
                     <!-- Text Content -->
                     <div class="input-group">
-                        <label for="entry-content">Thoughts & Notes</label>
+                        <div class="label-with-ai">
+                            <label for="entry-content">Thoughts & Notes</label>
+                            <button id="ai-generate-content" class="ai-mini-btn" title="Generate with AI">✨</button>
+                        </div>
                         <textarea id="entry-content" placeholder="Write about your day, thoughts, or anything that comes to mind..." rows="8"></textarea>
                     </div>
                     
                     <!-- Mood & Tags -->
                     <div class="metadata-section">
                         <div class="mood-selector">
-                            <label>How are you feeling?</label>
+                            <div class="label-with-ai">
+                                <label>How are you feeling?</label>
+                                <button id="ai-detect-mood" class="ai-mini-btn" title="Detect mood with AI">😊</button>
+                            </div>
                             <div class="mood-options">
                                 <button class="mood-btn" data-mood="happy">😊</button>
                                 <button class="mood-btn" data-mood="sad">😢</button>
@@ -162,8 +202,12 @@
                         </div>
                         
                         <div class="tags-section">
-                            <label for="entry-tags">Tags</label>
+                            <div class="label-with-ai">
+                                <label for="entry-tags">Tags</label>
+                                <button id="ai-generate-tags" class="ai-mini-btn" title="Generate tags with AI">🏷️</button>
+                            </div>
                             <input type="text" id="entry-tags" placeholder="Add tags separated by commas">
+                            <div id="suggested-tags" class="suggested-tags hidden"></div>
                         </div>
                     </div>
                 </div>
@@ -177,6 +221,39 @@
                 </div>
                 <div id="detail-content" class="detail-content">
                     <!-- Entry details will be dynamically loaded here -->
+                </div>
+            </section>
+
+            <!-- Settings View -->
+            <section id="settings-view" class="view settings-view">
+                <div class="settings-header">
+                    <button id="settings-back" class="header-btn">← Back</button>
+                    <h2>Settings</h2>
+                </div>
+                <div class="settings-content">
+                    <div class="setting-group">
+                        <h3>🤖 AI Features</h3>
+                        <div class="setting-item">
+                            <button id="ai-settings-btn" class="setting-btn">
+                                <span>Configure AI Services</span>
+                                <span class="setting-arrow">→</span>
+                            </button>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-toggle">
+                                <span>Auto-generate entries with AI</span>
+                                <input type="checkbox" id="auto-generate-toggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-toggle">
+                                <span>Enable speech recognition</span>
+                                <input type="checkbox" id="speech-recognition-toggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
                 </div>
             </section>
 
@@ -233,6 +310,7 @@
     <script src="journal.js"></script>
     <script src="audio.js"></script>
     <script src="camera.js"></script>
+    <script src="ai-services.js"></script>
     
     <script>
         // Prevent elastic scrolling
