@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AudioPhotoJournal - Debug</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .debug-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #b8daff; }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <div class="debug-container">
+        <h1>🔧 AudioPhotoJournal Debug Console</h1>
+        <p>This page will help diagnose what's wrong with the app.</p>
+        
+        <div id="status-container">
+            <div class="status info">🔍 Starting diagnostic tests...</div>
+        </div>
+        
+        <div style="margin: 20px 0;">
+            <button onclick="testBasicFunctionality()">Test Basic App Functions</button>
+            <button onclick="testDatabase()">Test Database</button>
+            <button onclick="testScripts()">Test All Scripts</button>
+            <button onclick="clearConsole()">Clear Console</button>
+        </div>
+        
+        <div id="console-output">
+            <h3>Console Output:</h3>
+            <pre id="console-log">Console will appear here...</pre>
+        </div>
+    </div>
+
+    <script>
+        // Debug console
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+        
+        let consoleOutput = '';
+        
+        function updateConsole() {
+            document.getElementById('console-log').textContent = consoleOutput;
+        }
+        
+        function addToConsole(level, message) {
+            const timestamp = new Date().toLocaleTimeString();
+            consoleOutput += `[${timestamp}] ${level}: ${message}\n`;
+            updateConsole();
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addToConsole('LOG', args.join(' '));
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addToConsole('ERROR', args.join(' '));
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addToConsole('WARN', args.join(' '));
+        };
+        
+        function clearConsole() {
+            consoleOutput = '';
+            updateConsole();
+        }
+        
+        function addStatus(message, type = 'info') {
+            const statusContainer = document.getElementById('status-container');
+            const statusDiv = document.createElement('div');
+            statusDiv.className = `status ${type}`;
+            statusDiv.textContent = message;
+            statusContainer.appendChild(statusDiv);
+        }
+        
+        function testBasicFunctionality() {
+            addStatus('🧪 Testing basic JavaScript functionality...', 'info');
+            
+            try {
+                // Test basic JS features
+                const testArray = [1, 2, 3];
+                const testObject = { test: 'value' };
+                const testFunction = () => 'hello';
+                
+                addStatus('✅ Basic JavaScript works', 'success');
+                
+                // Test IndexedDB
+                if ('indexedDB' in window) {
+                    addStatus('✅ IndexedDB is available', 'success');
+                } else {
+                    addStatus('❌ IndexedDB not supported', 'error');
+                }
+                
+                // Test Web Audio API
+                if ('AudioContext' in window || 'webkitAudioContext' in window) {
+                    addStatus('✅ Web Audio API is available', 'success');
+                } else {
+                    addStatus('❌ Web Audio API not supported', 'error');
+                }
+                
+                // Test MediaDevices
+                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                    addStatus('✅ MediaDevices API is available', 'success');
+                } else {
+                    addStatus('❌ MediaDevices API not supported', 'error');
+                }
+                
+            } catch (error) {
+                addStatus(`❌ Basic functionality test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testDatabase() {
+            addStatus('🗄️ Testing database connection...', 'info');
+            
+            try {
+                const request = indexedDB.open('AudioPhotoJournal_Debug', 1);
+                
+                request.onerror = function() {
+                    addStatus('❌ Database connection failed', 'error');
+                };
+                
+                request.onsuccess = function(event) {
+                    const db = event.target.result;
+                    addStatus('✅ Database connection successful', 'success');
+                    db.close();
+                };
+                
+                request.onupgradeneeded = function(event) {
+                    const db = event.target.result;
+                    db.createObjectStore('test', { keyPath: 'id' });
+                };
+                
+            } catch (error) {
+                addStatus(`❌ Database test failed: ${error.message}`, 'error');
+            }
+        }
+        
+        function testScripts() {
+            addStatus('📄 Testing script loading...', 'info');
+            
+            const scripts = [
+                'app.js',
+                'journal.js',
+                'audio.js',
+                'camera.js',
+                'ai-services-improved.js',
+                'settings.js',
+                'photo-manager.js'
+            ];
+            
+            scripts.forEach(script => {
+                const scriptElement = document.createElement('script');
+                scriptElement.src = script;
+                scriptElement.onload = function() {
+                    addStatus(`✅ ${script} loaded successfully`, 'success');
+                };
+                scriptElement.onerror = function() {
+                    addStatus(`❌ ${script} failed to load`, 'error');
+                };
+                document.head.appendChild(scriptElement);
+            });
+        }
+        
+        // Initialize debug
+        window.addEventListener('load', function() {
+            addStatus('🚀 Debug console initialized', 'success');
+            console.log('Debug console ready');
+        });
+        
+        // Catch all errors
+        window.addEventListener('error', function(event) {
+            addStatus(`❌ Global error: ${event.message} at ${event.filename}:${event.lineno}`, 'error');
+        });
+    </script>
+</body>
+</html> 
