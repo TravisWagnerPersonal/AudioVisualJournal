@@ -19,21 +19,6 @@ body {
     -webkit-tap-highlight-color: transparent;
 }
 
-/* Add subtle pattern overlay */
-body::before {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: 
-        radial-gradient(circle at 25% 25%, rgba(255,255,255,0.1) 0%, transparent 50%),
-        radial-gradient(circle at 75% 75%, rgba(255,255,255,0.05) 0%, transparent 50%);
-    pointer-events: none;
-    z-index: 1;
-}
-
 /* ===== Improved Loading Screen ===== */
 .loading-screen {
     position: fixed;
@@ -51,19 +36,6 @@ body::before {
     transition: opacity 0.5s ease;
 }
 
-.loading-screen::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: 
-        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
-    pointer-events: none;
-}
-
 .loading-spinner {
     width: 70px;
     height: 70px;
@@ -73,8 +45,6 @@ body::before {
     animation: spin 1s ease-in-out infinite;
     margin-bottom: 30px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-    position: relative;
-    z-index: 2;
 }
 
 @keyframes spin {
@@ -86,16 +56,12 @@ body::before {
     font-weight: 700;
     margin-bottom: 12px;
     text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    position: relative;
-    z-index: 2;
 }
 
 .loading-screen p {
     font-size: 18px;
     opacity: 0.9;
     font-weight: 400;
-    position: relative;
-    z-index: 2;
 }
 
 /* ===== Enhanced App Container ===== */
@@ -105,7 +71,6 @@ body::before {
     flex-direction: column;
     background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
     position: relative;
-    z-index: 2;
 }
 
 /* ===== Modern Header ===== */
@@ -295,7 +260,6 @@ body::before {
     padding: 20px 24px;
     border-radius: 16px;
     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-    border: 1px solid rgba(255,255,255,0.3);
 }
 
 .timeline-header h2 {
@@ -311,7 +275,6 @@ body::before {
     border-radius: 12px;
     padding: 4px;
     gap: 4px;
-    box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
 }
 
 .view-btn {
@@ -343,7 +306,6 @@ body::before {
     border-radius: 20px;
     box-shadow: 0 8px 32px rgba(0,0,0,0.06);
     margin: 20px;
-    border: 1px solid rgba(255,255,255,0.3);
 }
 
 .empty-state svg {
@@ -378,29 +340,12 @@ body::before {
     cursor: pointer;
     transition: all 0.3s ease;
     box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
-    position: relative;
-    overflow: hidden;
-}
-
-.cta-button::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.5s;
 }
 
 .cta-button:hover {
     background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
     transform: translateY(-2px);
     box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-}
-
-.cta-button:hover::before {
-    left: 100%;
 }
 
 .cta-button:active {
@@ -425,30 +370,12 @@ body::before {
     transition: all 0.3s ease;
     border: 1px solid rgba(255,255,255,0.2);
     box-shadow: 0 4px 20px rgba(0,0,0,0.06);
-    position: relative;
-    overflow: hidden;
-}
-
-.entry-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
 }
 
 .entry-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 8px 30px rgba(0,0,0,0.12);
     background: rgba(255, 255, 255, 0.95);
-}
-
-.entry-card:hover::before {
-    opacity: 1;
 }
 
 .entry-card:active {
@@ -653,19 +580,6 @@ body::before {
     align-items: center;
     justify-content: center;
     gap: 8px;
-    position: relative;
-    overflow: hidden;
-}
-
-.media-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
-    transition: left 0.5s;
 }
 
 .media-btn:hover {
@@ -673,10 +587,6 @@ body::before {
     border-color: #667eea;
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
-}
-
-.media-btn:hover::before {
-    left: 100%;
 }
 
 .media-btn:active {
@@ -706,29 +616,12 @@ body::before {
     justify-content: center;
     gap: 12px;
     box-shadow: 0 4px 20px rgba(255, 107, 107, 0.3);
-    position: relative;
-    overflow: hidden;
-}
-
-.record-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.5s;
 }
 
 .record-btn:hover {
     background: linear-gradient(135deg, #ff5252 0%, #ffc107 100%);
     transform: translateY(-2px);
     box-shadow: 0 6px 25px rgba(255, 107, 107, 0.4);
-}
-
-.record-btn:hover::before {
-    left: 100%;
 }
 
 .record-btn:active {
@@ -804,20 +697,6 @@ body::before {
     justify-content: center;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    position: relative;
-    overflow: hidden;
-}
-
-.mood-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    opacity: 0;
-    transition: opacity 0.3s ease;
 }
 
 .mood-btn:hover {
@@ -831,10 +710,6 @@ body::before {
     border-color: #667eea;
     box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
     transform: scale(1.1);
-}
-
-.mood-btn.selected::before {
-    opacity: 1;
 }
 
 /* ===== Enhanced Bottom Navigation ===== */
@@ -863,7 +738,6 @@ body::before {
     align-items: center;
     gap: 4px;
     min-width: 60px;
-    position: relative;
 }
 
 .nav-btn:hover {
@@ -898,20 +772,6 @@ body::before {
     box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
     transition: all 0.3s ease;
     border: 1px solid rgba(255,255,255,0.1);
-    position: relative;
-}
-
-.ai-panel::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background-image: 
-        radial-gradient(circle at 20% 80%, rgba(255,255,255,0.1) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(255,255,255,0.1) 0%, transparent 50%);
-    pointer-events: none;
 }
 
 .ai-panel.hidden {
@@ -928,8 +788,6 @@ body::before {
     align-items: center;
     padding: 20px 24px;
     color: white;
-    position: relative;
-    z-index: 2;
 }
 
 .ai-panel-header h3 {
@@ -962,8 +820,6 @@ body::before {
 
 .ai-panel-content {
     padding: 0 24px 24px;
-    position: relative;
-    z-index: 2;
 }
 
 .ai-status {
@@ -1000,29 +856,12 @@ body::before {
     gap: 12px;
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    position: relative;
-    overflow: hidden;
-}
-
-.ai-action-btn::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-    transition: left 0.5s;
 }
 
 .ai-action-btn:hover {
     background: rgba(255,255,255,0.25);
     transform: translateY(-2px);
     box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-}
-
-.ai-action-btn:hover::before {
-    left: 100%;
 }
 
 .ai-action-btn:active {
