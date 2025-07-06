@@ -231,29 +231,291 @@
                     <h2>Settings</h2>
                 </div>
                 <div class="settings-content">
+                    
+                    <!-- AI Features Section -->
                     <div class="setting-group">
                         <h3>🤖 AI Features</h3>
                         <div class="setting-item">
                             <button id="ai-settings-btn" class="setting-btn">
-                                <span>Configure AI Services</span>
+                                <div class="setting-content">
+                                    <span class="setting-title">Configure AI Services</span>
+                                    <span class="setting-subtitle">API keys and AI preferences</span>
+                                </div>
                                 <span class="setting-arrow">→</span>
                             </button>
                         </div>
                         <div class="setting-item">
                             <label class="setting-toggle">
-                                <span>Auto-generate entries with AI</span>
+                                <div class="setting-content">
+                                    <span class="setting-title">Auto-generate entries with AI</span>
+                                    <span class="setting-subtitle">Automatically create journal content</span>
+                                </div>
                                 <input type="checkbox" id="auto-generate-toggle">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
                         <div class="setting-item">
                             <label class="setting-toggle">
-                                <span>Enable speech recognition</span>
+                                <div class="setting-content">
+                                    <span class="setting-title">Enable speech recognition</span>
+                                    <span class="setting-subtitle">Voice-to-text transcription</span>
+                                </div>
                                 <input type="checkbox" id="speech-recognition-toggle">
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
+                        <div class="setting-item">
+                            <label class="setting-toggle">
+                                <div class="setting-content">
+                                    <span class="setting-title">Auto-tag with AI</span>
+                                    <span class="setting-subtitle">Generate tags from photos and text</span>
+                                </div>
+                                <input type="checkbox" id="auto-tag-toggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
                     </div>
+
+                    <!-- Journal Preferences Section -->
+                    <div class="setting-group">
+                        <h3>📝 Journal Preferences</h3>
+                        <div class="setting-item">
+                            <label class="setting-toggle">
+                                <div class="setting-content">
+                                    <span class="setting-title">Auto-save drafts</span>
+                                    <span class="setting-subtitle">Automatically save while typing</span>
+                                </div>
+                                <input type="checkbox" id="auto-save-toggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <button id="default-mood-btn" class="setting-btn">
+                                <div class="setting-content">
+                                    <span class="setting-title">Default mood</span>
+                                    <span class="setting-subtitle" id="default-mood-status">None selected</span>
+                                </div>
+                                <span class="setting-arrow">→</span>
+                            </button>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-toggle">
+                                <div class="setting-content">
+                                    <span class="setting-title">Show date stamps</span>
+                                    <span class="setting-subtitle">Display creation dates on entries</span>
+                                </div>
+                                <input type="checkbox" id="show-dates-toggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <button id="entry-sorting-btn" class="setting-btn">
+                                <div class="setting-content">
+                                    <span class="setting-title">Sort entries by</span>
+                                    <span class="setting-subtitle" id="sorting-status">Newest first</span>
+                                </div>
+                                <span class="setting-arrow">→</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Privacy & Security Section -->
+                    <div class="setting-group">
+                        <h3>🔒 Privacy & Security</h3>
+                        <div class="setting-item">
+                            <label class="setting-toggle">
+                                <div class="setting-content">
+                                    <span class="setting-title">Local storage only</span>
+                                    <span class="setting-subtitle">Keep all data on this device</span>
+                                </div>
+                                <input type="checkbox" id="local-only-toggle" checked disabled>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-toggle">
+                                <div class="setting-content">
+                                    <span class="setting-title">Clear cache on exit</span>
+                                    <span class="setting-subtitle">Remove temporary files when closing app</span>
+                                </div>
+                                <input type="checkbox" id="clear-cache-toggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <button id="privacy-settings-btn" class="setting-btn">
+                                <div class="setting-content">
+                                    <span class="setting-title">AI privacy controls</span>
+                                    <span class="setting-subtitle">Manage what AI can access</span>
+                                </div>
+                                <span class="setting-arrow">→</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Display & Appearance Section -->
+                    <div class="setting-group">
+                        <h3>🎨 Display & Appearance</h3>
+                        <div class="setting-item">
+                            <button id="theme-btn" class="setting-btn">
+                                <div class="setting-content">
+                                    <span class="setting-title">Theme</span>
+                                    <span class="setting-subtitle" id="theme-status">Auto (follows system)</span>
+                                </div>
+                                <span class="setting-arrow">→</span>
+                            </button>
+                        </div>
+                        <div class="setting-item">
+                            <button id="font-size-btn" class="setting-btn">
+                                <div class="setting-content">
+                                    <span class="setting-title">Text size</span>
+                                    <span class="setting-subtitle" id="font-size-status">Medium</span>
+                                </div>
+                                <span class="setting-arrow">→</span>
+                            </button>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-toggle">
+                                <div class="setting-content">
+                                    <span class="setting-title">Compact view</span>
+                                    <span class="setting-subtitle">Show more entries on screen</span>
+                                </div>
+                                <input type="checkbox" id="compact-view-toggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Data Management Section -->
+                    <div class="setting-group">
+                        <h3>💾 Data Management</h3>
+                        <div class="setting-item">
+                            <button id="storage-info-btn" class="setting-btn">
+                                <div class="setting-content">
+                                    <span class="setting-title">Storage usage</span>
+                                    <span class="setting-subtitle" id="storage-status">Calculating...</span>
+                                </div>
+                                <span class="setting-arrow">→</span>
+                            </button>
+                        </div>
+                        <div class="setting-item">
+                            <button id="export-data-btn" class="setting-btn">
+                                <div class="setting-content">
+                                    <span class="setting-title">Export journal data</span>
+                                    <span class="setting-subtitle">Download your entries as JSON</span>
+                                </div>
+                                <span class="setting-arrow">→</span>
+                            </button>
+                        </div>
+                        <div class="setting-item">
+                            <button id="import-data-btn" class="setting-btn">
+                                <div class="setting-content">
+                                    <span class="setting-title">Import journal data</span>
+                                    <span class="setting-subtitle">Restore from backup file</span>
+                                </div>
+                                <span class="setting-arrow">→</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Notifications Section -->
+                    <div class="setting-group">
+                        <h3>🔔 Notifications & Reminders</h3>
+                        <div class="setting-item">
+                            <label class="setting-toggle">
+                                <div class="setting-content">
+                                    <span class="setting-title">Daily journal reminders</span>
+                                    <span class="setting-subtitle">Get reminded to write daily</span>
+                                </div>
+                                <input type="checkbox" id="daily-reminders-toggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="setting-item">
+                            <button id="reminder-time-btn" class="setting-btn">
+                                <div class="setting-content">
+                                    <span class="setting-title">Reminder time</span>
+                                    <span class="setting-subtitle" id="reminder-time-status">8:00 PM</span>
+                                </div>
+                                <span class="setting-arrow">→</span>
+                            </button>
+                        </div>
+                        <div class="setting-item">
+                            <label class="setting-toggle">
+                                <div class="setting-content">
+                                    <span class="setting-title">Achievement notifications</span>
+                                    <span class="setting-subtitle">Celebrate writing streaks</span>
+                                </div>
+                                <input type="checkbox" id="achievement-notifications-toggle" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- About Section -->
+                    <div class="setting-group">
+                        <h3>ℹ️ About</h3>
+                        <div class="setting-item">
+                            <button id="about-app-btn" class="setting-btn">
+                                <div class="setting-content">
+                                    <span class="setting-title">About Audio-Photo Journal</span>
+                                    <span class="setting-subtitle">Version 2.0.0 with AI</span>
+                                </div>
+                                <span class="setting-arrow">→</span>
+                            </button>
+                        </div>
+                        <div class="setting-item">
+                            <button id="help-support-btn" class="setting-btn">
+                                <div class="setting-content">
+                                    <span class="setting-title">Help & Support</span>
+                                    <span class="setting-subtitle">Get help using the app</span>
+                                </div>
+                                <span class="setting-arrow">→</span>
+                            </button>
+                        </div>
+                        <div class="setting-item">
+                            <button id="privacy-policy-btn" class="setting-btn">
+                                <div class="setting-content">
+                                    <span class="setting-title">Privacy Policy</span>
+                                    <span class="setting-subtitle">How we protect your data</span>
+                                </div>
+                                <span class="setting-arrow">→</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Danger Zone Section -->
+                    <div class="setting-group danger-zone">
+                        <h3>⚠️ Advanced</h3>
+                        <div class="setting-item">
+                            <button id="clear-cache-btn" class="setting-btn">
+                                <div class="setting-content">
+                                    <span class="setting-title">Clear app cache</span>
+                                    <span class="setting-subtitle">Free up storage space</span>
+                                </div>
+                                <span class="setting-arrow">→</span>
+                            </button>
+                        </div>
+                        <div class="setting-item">
+                            <button id="delete-entries-btn" class="setting-btn danger">
+                                <div class="setting-content">
+                                    <span class="setting-title">Delete all entries</span>
+                                    <span class="setting-subtitle">Permanently remove all journal entries</span>
+                                </div>
+                                <span class="setting-arrow">→</span>
+                            </button>
+                        </div>
+                        <div class="setting-item">
+                            <button id="reset-app-btn" class="setting-btn danger">
+                                <div class="setting-content">
+                                    <span class="setting-title">Reset app data</span>
+                                    <span class="setting-subtitle">Delete everything and start fresh</span>
+                                </div>
+                                <span class="setting-arrow">→</span>
+                            </button>
+                        </div>
+                    </div>
+
                 </div>
             </section>
 
@@ -311,6 +573,7 @@
     <script src="audio.js"></script>
     <script src="camera.js"></script>
     <script src="ai-services.js"></script>
+    <script src="settings.js"></script>
     
     <script>
         // Prevent elastic scrolling
