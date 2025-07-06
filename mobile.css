@@ -1,0 +1,231 @@
+/* ===== Mobile-Specific Styles ===== */
+
+/* Modal Styles for Settings */
+.modal-content {
+    background: white;
+    border-radius: 16px;
+    padding: 24px;
+    width: 100%;
+    max-width: 400px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.modal-content h3 {
+    font-size: 20px;
+    font-weight: 600;
+    margin-bottom: 16px;
+    color: #333;
+    text-align: center;
+}
+
+.modal-buttons {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+.modal-buttons button {
+    flex: 1;
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid #e5e5ea;
+    background: #f2f2f7;
+    color: #333;
+}
+
+.modal-buttons button.danger {
+    background: #ff3b30;
+    border-color: #ff3b30;
+    color: white;
+}
+
+.modal-buttons button:active {
+    transform: scale(0.98);
+}
+
+.options-list {
+    margin: 16px 0;
+}
+
+.option-item {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.option-item:hover {
+    background: #f8f9fa;
+}
+
+.option-item.selected {
+    background: #e8f4ff;
+    border: 1px solid #007aff;
+}
+
+.option-item input {
+    margin-right: 12px;
+}
+
+.storage-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.storage-item:last-child {
+    border-bottom: none;
+}
+
+.privacy-controls {
+    margin: 16px 0;
+}
+
+.control-item {
+    margin-bottom: 16px;
+}
+
+.control-item label {
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+    margin-bottom: 4px;
+}
+
+.control-item input {
+    margin-right: 8px;
+}
+
+.control-item p {
+    font-size: 13px;
+    color: #666;
+    margin-left: 24px;
+}
+
+.privacy-note {
+    font-size: 13px;
+    color: #666;
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    margin: 16px 0;
+}
+
+/* About section styles */
+.about-features ul {
+    text-align: left;
+    margin: 12px 0;
+}
+
+.about-features li {
+    margin: 6px 0;
+    font-size: 14px;
+}
+
+.help-section h4 {
+    margin: 16px 0 8px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.help-section ul {
+    text-align: left;
+    margin: 8px 0;
+}
+
+.help-section li {
+    margin: 4px 0;
+    font-size: 14px;
+}
+
+.privacy-section h4 {
+    margin: 16px 0 8px 0;
+    color: #333;
+    font-size: 16px;
+}
+
+.storage-info {
+    margin: 16px 0;
+}
+
+/* Toast notification styles */
+.toast {
+    position: fixed;
+    bottom: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #333;
+    color: white;
+    padding: 12px 20px;
+    border-radius: 8px;
+    z-index: 1001;
+    font-size: 14px;
+    max-width: 300px;
+    text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+/* Additional mobile optimizations */
+@media (max-width: 480px) {
+    .modal-content {
+        margin: 20px;
+        max-width: calc(100vw - 40px);
+    }
+    
+    .modal-buttons {
+        flex-direction: column;
+    }
+    
+    .modal-buttons button {
+        margin-bottom: 8px;
+    }
+    
+    .modal-buttons button:last-child {
+        margin-bottom: 0;
+    }
+}
+
+/* Dark mode for modals */
+@media (prefers-color-scheme: dark) {
+    .modal-content {
+        background: #1c1c1e;
+        color: #fff;
+    }
+    
+    .modal-content h3 {
+        color: #fff;
+    }
+    
+    .modal-buttons button {
+        background: #2c2c2e;
+        border-color: #3a3a3c;
+        color: #fff;
+    }
+    
+    .option-item {
+        color: #fff;
+    }
+    
+    .option-item:hover {
+        background: #2c2c2e;
+    }
+    
+    .option-item.selected {
+        background: #1a3a5c;
+        border-color: #0a84ff;
+    }
+    
+    .privacy-note {
+        background: #2c2c2e;
+        color: #a0a0a0;
+    }
+} 
