@@ -255,4 +255,4 @@ This project is open source and available under the MIT License.
 
 ---
 
-**Made with ❤️ for people who want to capture and preserve their memories in a beautiful, private way.** 
+**Made with ❤️ for people who want to capture and preserve their memories in a beautiful, private way.**
