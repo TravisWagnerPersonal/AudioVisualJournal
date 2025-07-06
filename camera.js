@@ -606,39 +606,465 @@ class ImageUtils {
     }
 }
 
-// ===== Initialize Camera System =====
-let cameraManager = null;
+// ===== Camera Service Integration with Photo Manager =====
 
-// Initialize when DOM is loaded
-document.addEventListener('DOMContentLoaded', function() {
-    cameraManager = new CameraManager();
-    
-    console.log('📷 Camera system initialized');
-    
-    // Check camera capabilities
-    cameraManager.getCameraCapabilities().then(capabilities => {
-        console.log('📋 Camera capabilities:', capabilities);
+class CameraService {
+    constructor() {
+        this.isStreamActive = false;
+        this.currentStream = null;
+        this.currentFacingMode = 'environment'; // 'user' for front, 'environment' for back
+        this.photoManager = null; // Will be set when PhotoManager is available
         
-        if (!capabilities.hasCamera) {
-            console.warn('⚠️ No camera detected');
-            // Could hide camera button or show info message
+        this.init();
+    }
+    
+    init() {
+        this.bindEvents();
+        console.log('📷 Camera Service initialized');
+        
+        // Wait for PhotoManager to be available
+        this.waitForPhotoManager();
+    }
+    
+    waitForPhotoManager() {
+        if (window.photoManager) {
+            this.photoManager = window.photoManager;
+            console.log('📷 Camera integrated with Photo Manager');
+        } else {
+            setTimeout(() => this.waitForPhotoManager(), 100);
+        }
+    }
+    
+    bindEvents() {
+        // Camera modal controls
+        document.getElementById('take-photo')?.addEventListener('click', () => {
+            this.openCamera();
+        });
+        
+        document.getElementById('select-photo')?.addEventListener('click', () => {
+            this.selectFromGallery();
+        });
+        
+        document.getElementById('close-camera')?.addEventListener('click', () => {
+            this.closeCamera();
+        });
+        
+        document.getElementById('capture-photo')?.addEventListener('click', () => {
+            this.capturePhoto();
+        });
+        
+        document.getElementById('flip-camera')?.addEventListener('click', () => {
+            this.flipCamera();
+        });
+    }
+    
+    // ===== Camera Access =====
+    
+    async openCamera() {
+        try {
+            const modal = document.getElementById('camera-modal');
+            const video = document.getElementById('camera-video');
+            
+            if (!modal || !video) {
+                throw new Error('Camera UI elements not found');
+            }
+            
+            // Show modal
+            modal.classList.remove('hidden');
+            
+            // Request camera access
+            await this.startCamera();
+            
+        } catch (error) {
+            console.error('Failed to open camera:', error);
+            this.showError('Camera access failed. Please check permissions.');
+            this.closeCamera();
+        }
+    }
+    
+    async startCamera() {
+        try {
+            // Stop existing stream if any
+            if (this.currentStream) {
+                this.stopCamera();
+            }
+            
+            const constraints = {
+                video: {
+                    facingMode: this.currentFacingMode,
+                    width: { ideal: 1920, max: 1920 },
+                    height: { ideal: 1080, max: 1080 }
+                },
+                audio: false
+            };
+            
+            this.currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+            
+            const video = document.getElementById('camera-video');
+            if (video) {
+                video.srcObject = this.currentStream;
+                await video.play();
+                this.isStreamActive = true;
+                console.log('📷 Camera stream started');
+            }
+            
+        } catch (error) {
+            console.error('Camera stream failed:', error);
+            
+            if (error.name === 'NotAllowedError') {
+                throw new Error('Camera permission denied. Please allow camera access and try again.');
+            } else if (error.name === 'NotFoundError') {
+                throw new Error('No camera found on this device.');
+            } else {
+                throw new Error('Failed to access camera. Please try again.');
+            }
+        }
+    }
+    
+    stopCamera() {
+        if (this.currentStream) {
+            this.currentStream.getTracks().forEach(track => {
+                track.stop();
+            });
+            this.currentStream = null;
+            this.isStreamActive = false;
+            console.log('📷 Camera stream stopped');
+        }
+    }
+    
+    closeCamera() {
+        this.stopCamera();
+        
+        const modal = document.getElementById('camera-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        
+        const video = document.getElementById('camera-video');
+        if (video) {
+            video.srcObject = null;
+        }
+    }
+    
+    async flipCamera() {
+        try {
+            this.currentFacingMode = this.currentFacingMode === 'user' ? 'environment' : 'user';
+            await this.startCamera();
+        } catch (error) {
+            console.error('Failed to flip camera:', error);
+            this.showError('Failed to switch camera');
+        }
+    }
+    
+    // ===== Photo Capture =====
+    
+    async capturePhoto() {
+        try {
+            if (!this.isStreamActive) {
+                throw new Error('Camera not active');
+            }
+            
+            const video = document.getElementById('camera-video');
+            const canvas = document.getElementById('camera-canvas') || this.createCaptureCanvas();
+            
+            if (!video || !canvas) {
+                throw new Error('Camera elements not found');
+            }
+            
+            // Set canvas size to match video
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            
+            // Capture frame
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0);
+            
+            // Convert to blob with high quality
+            const blob = await this.canvasToBlob(canvas, 'image/jpeg', 0.92);
+            
+            // Close camera
+            this.closeCamera();
+            
+            // Process through PhotoManager
+            if (this.photoManager) {
+                const photoData = await this.photoManager.processPhoto(blob, 'camera');
+                
+                // Add to current journal entry
+                this.addPhotoToEntry(photoData);
+                
+                console.log('📷 Photo captured and processed:', photoData.id);
+                return photoData;
+            } else {
+                throw new Error('Photo Manager not available');
+            }
+            
+        } catch (error) {
+            console.error('Photo capture failed:', error);
+            this.showError('Failed to capture photo');
+            throw error;
+        }
+    }
+    
+    createCaptureCanvas() {
+        const canvas = document.createElement('canvas');
+        canvas.id = 'camera-canvas';
+        canvas.style.display = 'none';
+        document.body.appendChild(canvas);
+        return canvas;
+    }
+    
+    canvasToBlob(canvas, type = 'image/jpeg', quality = 0.92) {
+        return new Promise((resolve) => {
+            canvas.toBlob(resolve, type, quality);
+        });
+    }
+    
+    // ===== Gallery Selection =====
+    
+    async selectFromGallery() {
+        try {
+            if (!this.photoManager) {
+                throw new Error('Photo Manager not available');
+            }
+            
+            const photos = await this.photoManager.selectPhoto();
+            
+            // Add all selected photos to current entry
+            photos.forEach(photoData => {
+                this.addPhotoToEntry(photoData);
+            });
+            
+            console.log(`📷 Selected ${photos.length} photos from gallery`);
+            return photos;
+            
+        } catch (error) {
+            console.error('Gallery selection failed:', error);
+            this.showError('Failed to select photos from gallery');
+            throw error;
+        }
+    }
+    
+    // ===== Journal Integration =====
+    
+    addPhotoToEntry(photoData) {
+        // Add thumbnail to journal manager
+        if (window.journalManager) {
+            window.journalManager.addPhoto({
+                id: photoData.id,
+                dataUrl: photoData.thumbnail, // Use thumbnail for display
+                type: 'image/jpeg',
+                metadata: photoData.metadata
+            });
+        }
+        
+        // Update photo preview in UI
+        this.updatePhotoPreview();
+    }
+    
+    updatePhotoPreview() {
+        const preview = document.getElementById('photo-preview');
+        if (!preview || !window.journalManager) return;
+        
+        preview.innerHTML = '';
+        
+        window.journalManager.currentPhotos.forEach((photo, index) => {
+            const photoDiv = document.createElement('div');
+            photoDiv.className = 'photo-item';
+            photoDiv.innerHTML = `
+                <img src="${photo.dataUrl}" alt="Photo ${index + 1}" onclick="photoViewer.show('${photo.id}')">
+                <button class="photo-remove" onclick="cameraService.removePhoto('${photo.id}')">×</button>
+                <div class="photo-quality-indicator">${this.getQualityIndicator(photo.id)}</div>
+            `;
+            preview.appendChild(photoDiv);
+        });
+    }
+    
+    getQualityIndicator(photoId) {
+        if (this.photoManager && this.photoManager.hasOriginalPhoto(photoId)) {
+            return '<span class="quality-badge original">HD</span>';
+        }
+        return '<span class="quality-badge thumbnail">LQ</span>';
+    }
+    
+    removePhoto(photoId) {
+        // Remove from journal manager
+        if (window.journalManager) {
+            const index = window.journalManager.currentPhotos.findIndex(photo => photo.id === photoId);
+            if (index !== -1) {
+                window.journalManager.currentPhotos.splice(index, 1);
+            }
+        }
+        
+        // Remove from photo manager
+        if (this.photoManager) {
+            this.photoManager.deletePhoto(photoId);
+        }
+        
+        // Update UI
+        this.updatePhotoPreview();
+    }
+    
+    // ===== Device Detection =====
+    
+    async getCameraCapabilities() {
+        try {
+            if (!navigator.mediaDevices || !navigator.mediaDevices.enumerateDevices) {
+                return { cameras: [], hasCamera: false };
+            }
+            
+            const devices = await navigator.mediaDevices.enumerateDevices();
+            const cameras = devices.filter(device => device.kind === 'videoinput');
+            
+            return {
+                cameras,
+                hasCamera: cameras.length > 0,
+                hasFrontCamera: cameras.some(camera => 
+                    camera.label.toLowerCase().includes('front') ||
+                    camera.label.toLowerCase().includes('user')
+                ),
+                hasBackCamera: cameras.some(camera => 
+                    camera.label.toLowerCase().includes('back') ||
+                    camera.label.toLowerCase().includes('environment')
+                )
+            };
+        } catch (error) {
+            console.error('Failed to get camera capabilities:', error);
+            return { cameras: [], hasCamera: false };
+        }
+    }
+    
+    // ===== Error Handling =====
+    
+    showError(message) {
+        // Create or update error display
+        const existingError = document.querySelector('.camera-error');
+        if (existingError) {
+            existingError.remove();
+        }
+        
+        const errorDiv = document.createElement('div');
+        errorDiv.className = 'camera-error';
+        errorDiv.textContent = message;
+        errorDiv.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #ff3b30;
+            color: white;
+            padding: 16px 20px;
+            border-radius: 8px;
+            z-index: 10000;
+            font-size: 14px;
+            max-width: 300px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        `;
+        
+        document.body.appendChild(errorDiv);
+        
+        // Auto-remove after 4 seconds
+        setTimeout(() => {
+            errorDiv.remove();
+        }, 4000);
+    }
+    
+    // ===== Photo Management Integration =====
+    
+    /**
+     * Get photo for display (integrates with PhotoManager)
+     */
+    async getPhoto(photoId, quality = 'thumbnail') {
+        if (this.photoManager) {
+            return await this.photoManager.getPhoto(photoId, quality);
+        }
+        return null;
+    }
+    
+    /**
+     * Check available qualities for a photo
+     */
+    getPhotoQualities(photoId) {
+        const qualities = ['thumbnail'];
+        
+        if (this.photoManager) {
+            const photo = this.photoManager.photos.get(photoId);
+            if (photo) {
+                if (photo.preview) qualities.push('preview');
+                if (this.photoManager.hasOriginalPhoto(photoId)) {
+                    qualities.push('original');
+                }
+            }
+        }
+        
+        return qualities;
+    }
+    
+    /**
+     * Get storage statistics
+     */
+    getStorageStats() {
+        if (this.photoManager) {
+            return this.photoManager.getStorageStats();
+        }
+        return { photoCount: 0, totalThumbnailSize: 0 };
+    }
+    
+    // ===== Legacy Support =====
+    
+    /**
+     * Legacy method for backward compatibility
+     */
+    openCamera(callback) {
+        if (typeof callback === 'function') {
+            this.legacyCallback = callback;
+        }
+        return this.openCamera();
+    }
+    
+    /**
+     * Legacy photo capture with callback
+     */
+    async capturePhotoLegacy() {
+        try {
+            const photoData = await this.capturePhoto();
+            if (this.legacyCallback) {
+                this.legacyCallback({
+                    dataUrl: photoData.thumbnail,
+                    type: photoData.metadata.type,
+                    id: photoData.id
+                });
+            }
+            return photoData;
+        } catch (error) {
+            if (this.legacyCallback) {
+                this.legacyCallback(null);
+            }
+            throw error;
+        }
+    }
+}
+
+// ===== Initialize Camera Service =====
+let cameraService = null;
+
+document.addEventListener('DOMContentLoaded', function() {
+    cameraService = new CameraService();
+    window.cameraService = cameraService;
+    
+    console.log('📷 Camera Service ready');
+    
+    // Check camera capabilities on load
+    cameraService.getCameraCapabilities().then(capabilities => {
+        console.log('📷 Camera capabilities:', capabilities);
+        
+        // Show/hide camera button based on availability
+        const takePhotoBtn = document.getElementById('take-photo');
+        if (takePhotoBtn && !capabilities.hasCamera) {
+            takePhotoBtn.style.display = 'none';
         }
     });
 });
 
-// ===== Global Functions =====
-window.openCamera = function() {
-    if (cameraManager) {
-        cameraManager.openCamera();
-    }
-};
-
-window.openFilePicker = function() {
-    if (cameraManager) {
-        cameraManager.openFilePicker();
-    }
-};
-
-// Export for use in other modules
-window.cameraManager = cameraManager;
-window.ImageUtils = ImageUtils; 
+// Export for other modules
+window.CameraService = CameraService; 
