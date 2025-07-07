@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" manifest="cache.manifest">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
@@ -12,559 +12,327 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
     
-    <!-- iOS Icons -->
-    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
-    <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
-    <link rel="apple-touch-icon" sizes="120x120" href="icons/icon-120.png">
-    <link rel="apple-touch-icon" sizes="76x76" href="icons/icon-76.png">
+    <!-- Icons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
     
     <!-- Startup Images -->
     <link rel="apple-touch-startup-image" href="startup.png">
-    
-    <!-- Favicon -->
-    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
     
     <title>Audio-Photo Journal</title>
     <link rel="stylesheet" href="styles.css">
     <link rel="stylesheet" href="mobile.css">
     <link rel="stylesheet" href="photo-viewer.css">
 </head>
-<body ontouchmove="preventElasticScrolling(event);">
+<body>
     
     <!-- Loading Screen -->
-    <div id="loading-screen" class="loading-screen">
-        <div class="loading-spinner"></div>
-        <h2>Audio-Photo Journal</h2>
-        <p>Loading your memories...</p>
+    <div id="loading-screen" class="loading">
+        <div class="spinner"></div>
     </div>
 
     <!-- Main App Container -->
-    <div id="app" class="app-container" style="display: none;">
+    <div id="app" class="app-container fade-in" style="display: none;">
         
-        <!-- Navigation Header -->
+        <!-- App Header -->
         <header class="app-header">
-            <div class="header-content">
-                <button id="menu-btn" class="header-btn">
-                    <span class="hamburger"></span>
-                </button>
-                <h1 class="app-title">Audio Journal</h1>
-                <button id="search-btn" class="header-btn">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="11" cy="11" r="8"></circle>
-                        <path d="m21 21-4.35-4.35"></path>
-                    </svg>
-                </button>
-            </div>
+            <h1 class="app-title">Audio Journal</h1>
+            <p class="app-subtitle">Capture life's moments with photos, voice, and words</p>
         </header>
 
-        <!-- Search Bar (Hidden by default) -->
-        <div id="search-container" class="search-container hidden">
-            <div class="search-bar">
-                <input type="text" id="search-input" placeholder="Search your journal..." autocomplete="off">
-                <button id="search-close" class="search-close-btn">×</button>
+        <!-- Navigation -->
+        <nav class="nav-container">
+            <div class="nav">
+                <div class="nav-item">
+                    <button class="nav-btn active" data-view="timeline">
+                        📝 Journal
+                    </button>
+                </div>
+                <div class="nav-item">
+                    <button class="nav-btn" data-view="create">
+                        ➕ New Entry
+                    </button>
+                </div>
+                <div class="nav-item">
+                    <button class="nav-btn" data-view="search">
+                        🔍 Search
+                    </button>
+                </div>
+                <div class="nav-item">
+                    <button class="nav-btn" data-view="settings">
+                        ⚙️ Settings
+                    </button>
+                </div>
             </div>
-        </div>
+        </nav>
 
         <!-- Main Content Area -->
         <main class="main-content">
             
             <!-- Timeline View (Default) -->
-            <section id="timeline-view" class="view timeline-view active">
-                <div class="timeline-header">
-                    <h2>Your Journal</h2>
-                    <div class="view-controls">
-                        <button class="view-btn active" data-view="list">List</button>
-                        <button class="view-btn" data-view="grid">Grid</button>
+            <section id="timeline-view" class="view active">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="card-icon">📖</div>
+                            Your Journal
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-secondary" data-view-mode="list">List</button>
+                            <button class="btn btn-primary" data-view-mode="grid">Grid</button>
+                        </div>
                     </div>
-                </div>
-                
-                <div id="entries-container" class="entries-container">
-                    <!-- Journal entries will be dynamically inserted here -->
-                </div>
-                
-                <div id="empty-state" class="empty-state">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-                        <path d="M14.828 14.828a4 4 0 0 1-5.656 0M12 21l-7-7 7-7 7 7z"></path>
-                    </svg>
-                    <h3>Start Your Journal</h3>
-                    <p>Capture your thoughts, moments, and memories with audio and photos.</p>
-                    <button class="cta-button" onclick="showCreateEntry()">Create First Entry</button>
+                    
+                    <div id="entries-container" class="entries-grid">
+                        <!-- Journal entries will be dynamically inserted here -->
+                    </div>
+                    
+                    <div id="empty-state" class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <div class="empty-state-text">Start Your Journey</div>
+                        <p>Capture your thoughts, moments, and memories with audio and photos.</p>
+                        <button class="btn btn-primary btn-lg" onclick="showCreateEntry()">Create Your First Entry</button>
+                    </div>
                 </div>
             </section>
 
             <!-- Create/Edit Entry View -->
-            <section id="create-view" class="view create-view">
-                <div class="create-header">
-                    <button id="cancel-create" class="header-btn">Cancel</button>
-                    <h2 id="create-title">New Entry</h2>
-                    <div class="create-header-actions">
-                        <button id="ai-assist-btn" class="header-btn ai-btn" title="AI Assistant">🤖</button>
-                        <button id="save-entry" class="header-btn save-btn">Save</button>
-                    </div>
-                </div>
-                
-                <div class="create-content">
-                    <!-- AI Assistant Panel -->
-                    <div id="ai-panel" class="ai-panel hidden">
-                        <div class="ai-panel-header">
-                            <h3>🤖 AI Assistant</h3>
-                            <button id="ai-panel-close" class="ai-close-btn">×</button>
+            <section id="create-view" class="view">
+                <form class="journal-form">
+                    
+                    <!-- Entry Title -->
+                    <div class="section">
+                        <div class="section-title">
+                            <div class="section-icon">✍️</div>
+                            What's on your mind?
                         </div>
-                        <div class="ai-panel-content">
-                            <div class="ai-status" id="ai-status">Ready to help analyze your photos and audio!</div>
-                            <div class="ai-actions">
-                                <button id="ai-analyze-photo" class="ai-action-btn">📷 Analyze Photos</button>
-                                <button id="ai-transcribe-audio" class="ai-action-btn">🎤 Transcribe Audio</button>
-                                <button id="ai-generate-entry" class="ai-action-btn primary">✨ Generate Entry</button>
-                            </div>
-                            <div id="ai-results" class="ai-results hidden"></div>
+                        <div class="form-group">
+                            <input type="text" id="entry-title" class="form-input" placeholder="Give your entry a title..." maxlength="100">
                         </div>
-                    </div>
-
-                    <!-- Title Input -->
-                    <div class="input-group">
-                        <label for="entry-title">Title</label>
-                        <input type="text" id="entry-title" placeholder="What's on your mind?" maxlength="100">
+                        <div class="form-group">
+                            <textarea id="entry-content" class="form-textarea" placeholder="Write about your day, thoughts, or anything that comes to mind..." rows="6"></textarea>
+                        </div>
                     </div>
                     
-                    <!-- Photo Section -->
-                    <div class="media-section">
-                        <div class="section-header">
-                            <h3>Photos</h3>
-                            <button id="ai-photo-analyze" class="ai-mini-btn" title="Analyze with AI">🤖</button>
+                    <!-- Photos Section -->
+                    <div class="section">
+                        <div class="section-title">
+                            <div class="section-icon">📷</div>
+                            Photos
                         </div>
-                        <div class="photo-controls">
-                            <button id="take-photo" class="media-btn">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path>
-                                    <circle cx="12" cy="13" r="4"></circle>
-                                </svg>
-                                Take Photo
-                            </button>
-                            <button id="select-photo" class="media-btn">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
-                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
-                                    <polyline points="21,15 16,10 5,21"></polyline>
-                                </svg>
-                                Choose Photo
-                            </button>
+                        <div class="media-grid">
+                            <div class="media-control" id="take-photo">
+                                <div class="media-control-icon">📸</div>
+                                <div class="media-control-text">Take Photo</div>
+                            </div>
+                            <div class="media-control" id="select-photo">
+                                <div class="media-control-icon">🖼️</div>
+                                <div class="media-control-text">Choose Photo</div>
+                            </div>
                         </div>
-                        <div id="photo-preview" class="photo-preview"></div>
-                        <div id="photo-analysis" class="ai-analysis hidden"></div>
+                        <div id="photo-preview" class="photo-preview mt-4"></div>
                     </div>
                     
                     <!-- Audio Section -->
-                    <div class="media-section">
-                        <div class="section-header">
-                            <h3>Audio Recording</h3>
-                            <button id="ai-speech-btn" class="ai-mini-btn" title="Live Speech Recognition">🎤</button>
+                    <div class="section">
+                        <div class="section-title">
+                            <div class="section-icon">🎤</div>
+                            Audio Recording
                         </div>
-                        <div class="audio-controls">
-                            <button id="record-btn" class="record-btn">
-                                <span class="record-icon"></span>
-                                <span class="record-text">Tap to Record</span>
+                        <div class="audio-recorder">
+                            <button id="record-btn" class="record-button" type="button">
+                                🎤
                             </button>
                             <div id="recording-timer" class="recording-timer hidden">00:00</div>
+                            <p>Tap to record your voice</p>
                         </div>
-                        <div id="audio-preview" class="audio-preview"></div>
-                        <div id="speech-transcription" class="speech-transcription hidden">
-                            <div class="transcription-header">
-                                <span>Live Transcription:</span>
-                                <button id="stop-speech" class="stop-speech-btn">Stop</button>
-                            </div>
-                            <div id="transcription-text" class="transcription-text"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- Text Content -->
-                    <div class="input-group">
-                        <div class="label-with-ai">
-                            <label for="entry-content">Thoughts & Notes</label>
-                            <button id="ai-generate-content" class="ai-mini-btn" title="Generate with AI">✨</button>
-                        </div>
-                        <textarea id="entry-content" placeholder="Write about your day, thoughts, or anything that comes to mind..." rows="8"></textarea>
+                        <div id="audio-preview" class="audio-preview mt-4"></div>
                     </div>
                     
                     <!-- Mood & Tags -->
-                    <div class="metadata-section">
+                    <div class="section">
                         <div class="mood-selector">
-                            <div class="label-with-ai">
-                                <label>How are you feeling?</label>
-                                <button id="ai-detect-mood" class="ai-mini-btn" title="Detect mood with AI">😊</button>
-                            </div>
+                            <div class="mood-title">How are you feeling?</div>
                             <div class="mood-options">
-                                <button class="mood-btn" data-mood="happy">😊</button>
-                                <button class="mood-btn" data-mood="sad">😢</button>
-                                <button class="mood-btn" data-mood="excited">🤩</button>
-                                <button class="mood-btn" data-mood="calm">😌</button>
-                                <button class="mood-btn" data-mood="anxious">😰</button>
-                                <button class="mood-btn" data-mood="grateful">🙏</button>
+                                <button type="button" class="mood-option" data-mood="happy">😊</button>
+                                <button type="button" class="mood-option" data-mood="sad">😢</button>
+                                <button type="button" class="mood-option" data-mood="excited">🤩</button>
+                                <button type="button" class="mood-option" data-mood="calm">😌</button>
+                                <button type="button" class="mood-option" data-mood="anxious">😰</button>
+                                <button type="button" class="mood-option" data-mood="grateful">🙏</button>
                             </div>
                         </div>
-                        
-                        <div class="tags-section">
-                            <div class="label-with-ai">
-                                <label for="entry-tags">Tags</label>
-                                <button id="ai-generate-tags" class="ai-mini-btn" title="Generate tags with AI">🏷️</button>
-                            </div>
-                            <input type="text" id="entry-tags" placeholder="Add tags separated by commas">
-                            <div id="suggested-tags" class="suggested-tags hidden"></div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="btn-group">
+                        <button type="button" id="cancel-create" class="btn btn-secondary">Cancel</button>
+                        <button type="button" id="ai-assist-btn" class="btn btn-accent">🤖 AI Assist</button>
+                        <button type="submit" id="save-entry" class="btn btn-success btn-lg">Save Entry</button>
+                    </div>
+                </form>
+
+                <!-- AI Assistant Panel -->
+                <div id="ai-panel" class="card mt-6 hidden">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="card-icon">🤖</div>
+                            AI Assistant
+                        </div>
+                        <button id="ai-panel-close" class="btn btn-secondary">×</button>
+                    </div>
+                    <div class="ai-status" id="ai-status">Ready to help you create amazing journal entries!</div>
+                    <div class="btn-group">
+                        <button id="ai-analyze-photo" class="btn btn-secondary">📷 Analyze Photos</button>
+                        <button id="ai-transcribe-audio" class="btn btn-secondary">🎤 Transcribe Audio</button>
+                        <button id="ai-generate-entry" class="btn btn-primary">✨ Generate Entry</button>
+                    </div>
+                    <div id="ai-results" class="mt-4 hidden"></div>
+                </div>
+            </section>
+
+            <!-- Search View -->
+            <section id="search-view" class="view">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="card-icon">🔍</div>
+                            Search Your Journal
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="search-input" class="form-input" placeholder="Search entries by title, content, or tags..." autocomplete="off">
+                    </div>
+                    <div id="search-results" class="entries-grid mt-6">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🔍</div>
+                            <div class="empty-state-text">Start typing to search</div>
+                            <p>Find entries by keywords, dates, moods, or tags.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings View -->
+            <section id="settings-view" class="view">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="card-icon">⚙️</div>
+                            Settings
+                        </div>
+                    </div>
+                    
+                    <!-- AI Features -->
+                    <div class="section">
+                        <div class="section-title">
+                            <div class="section-icon">🤖</div>
+                            AI Features
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="auto-generate-toggle"> Auto-generate entries with AI
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="speech-recognition-toggle"> Enable speech recognition
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="auto-tag-toggle"> Auto-tag with AI
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Journal Preferences -->
+                    <div class="section">
+                        <div class="section-title">
+                            <div class="section-icon">📝</div>
+                            Journal Preferences
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="auto-save-toggle" checked> Auto-save drafts
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="show-dates-toggle" checked> Show date stamps
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Data Management -->
+                    <div class="section">
+                        <div class="section-title">
+                            <div class="section-icon">💾</div>
+                            Data Management
+                        </div>
+                        <div class="btn-group">
+                            <button id="export-data-btn" class="btn btn-secondary">📤 Export Data</button>
+                            <button id="import-data-btn" class="btn btn-secondary">📥 Import Data</button>
+                        </div>
+                        <div class="btn-group mt-4">
+                            <button id="clear-entries-btn" class="btn btn-accent">🗑️ Delete All Entries</button>
+                            <button id="reset-app-btn" class="btn btn-accent">🔄 Reset App</button>
+                        </div>
+                    </div>
+
+                    <!-- Storage Info -->
+                    <div class="section">
+                        <div class="section-title">
+                            <div class="section-icon">📊</div>
+                            Storage Usage
+                        </div>
+                        <div id="storage-info" class="text-center">
+                            <p id="storage-status">Calculating storage usage...</p>
+                        </div>
+                    </div>
+
+                    <!-- About -->
+                    <div class="section">
+                        <div class="section-title">
+                            <div class="section-icon">ℹ️</div>
+                            About
+                        </div>
+                        <div class="text-center">
+                            <h3>Audio-Photo Journal</h3>
+                            <p>Version 2.0.0 with AI Integration</p>
+                            <p class="mt-2">A beautiful, private journaling app that captures your thoughts, photos, and voice recordings.</p>
                         </div>
                     </div>
                 </div>
             </section>
 
             <!-- Entry Detail View -->
-            <section id="detail-view" class="view detail-view">
-                <div class="detail-header">
-                    <button id="back-to-timeline" class="header-btn">← Back</button>
-                    <button id="edit-entry" class="header-btn">Edit</button>
-                </div>
-                <div id="detail-content" class="detail-content">
-                    <!-- Entry details will be dynamically loaded here -->
-                </div>
-            </section>
-
-            <!-- Settings View -->
-            <section id="settings-view" class="view settings-view">
-                <div class="settings-header">
-                    <button id="settings-back" class="header-btn">← Back</button>
-                    <h2>Settings</h2>
-                </div>
-                <div class="settings-content">
-                    
-                    <!-- AI Features Section -->
-                    <div class="setting-group">
-                        <h3>🤖 AI Features</h3>
-                        <div class="setting-item">
-                            <button id="ai-settings-btn" class="setting-btn">
-                                <div class="setting-content">
-                                    <span class="setting-title">Configure AI Services</span>
-                                    <span class="setting-subtitle">API keys and AI preferences</span>
-                                </div>
-                                <span class="setting-arrow">→</span>
-                            </button>
-                        </div>
-                        <div class="setting-item">
-                            <label class="setting-toggle">
-                                <div class="setting-content">
-                                    <span class="setting-title">Auto-generate entries with AI</span>
-                                    <span class="setting-subtitle">Automatically create journal content</span>
-                                </div>
-                                <input type="checkbox" id="auto-generate-toggle">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <div class="setting-item">
-                            <label class="setting-toggle">
-                                <div class="setting-content">
-                                    <span class="setting-title">Enable speech recognition</span>
-                                    <span class="setting-subtitle">Voice-to-text transcription</span>
-                                </div>
-                                <input type="checkbox" id="speech-recognition-toggle">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <div class="setting-item">
-                            <label class="setting-toggle">
-                                <div class="setting-content">
-                                    <span class="setting-title">Auto-tag with AI</span>
-                                    <span class="setting-subtitle">Generate tags from photos and text</span>
-                                </div>
-                                <input type="checkbox" id="auto-tag-toggle">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
+            <section id="detail-view" class="view">
+                <div class="card">
+                    <div class="card-header">
+                        <button id="back-to-timeline" class="btn btn-secondary">← Back</button>
+                        <button id="edit-entry" class="btn btn-primary">Edit</button>
                     </div>
-
-                    <!-- Journal Preferences Section -->
-                    <div class="setting-group">
-                        <h3>📝 Journal Preferences</h3>
-                        <div class="setting-item">
-                            <label class="setting-toggle">
-                                <div class="setting-content">
-                                    <span class="setting-title">Auto-save drafts</span>
-                                    <span class="setting-subtitle">Automatically save while typing</span>
-                                </div>
-                                <input type="checkbox" id="auto-save-toggle" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <div class="setting-item">
-                            <button id="default-mood-btn" class="setting-btn">
-                                <div class="setting-content">
-                                    <span class="setting-title">Default mood</span>
-                                    <span class="setting-subtitle" id="default-mood-status">None selected</span>
-                                </div>
-                                <span class="setting-arrow">→</span>
-                            </button>
-                        </div>
-                        <div class="setting-item">
-                            <label class="setting-toggle">
-                                <div class="setting-content">
-                                    <span class="setting-title">Show date stamps</span>
-                                    <span class="setting-subtitle">Display creation dates on entries</span>
-                                </div>
-                                <input type="checkbox" id="show-dates-toggle" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <div class="setting-item">
-                            <button id="entry-sorting-btn" class="setting-btn">
-                                <div class="setting-content">
-                                    <span class="setting-title">Sort entries by</span>
-                                    <span class="setting-subtitle" id="sorting-status">Newest first</span>
-                                </div>
-                                <span class="setting-arrow">→</span>
-                            </button>
-                        </div>
+                    <div id="detail-content" class="detail-content">
+                        <!-- Entry details will be dynamically loaded here -->
                     </div>
-
-                    <!-- Privacy & Security Section -->
-                    <div class="setting-group">
-                        <h3>🔒 Privacy & Security</h3>
-                        <div class="setting-item">
-                            <label class="setting-toggle">
-                                <div class="setting-content">
-                                    <span class="setting-title">Local storage only</span>
-                                    <span class="setting-subtitle">Keep all data on this device</span>
-                                </div>
-                                <input type="checkbox" id="local-only-toggle" checked disabled>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <div class="setting-item">
-                            <label class="setting-toggle">
-                                <div class="setting-content">
-                                    <span class="setting-title">Clear cache on exit</span>
-                                    <span class="setting-subtitle">Remove temporary files when closing app</span>
-                                </div>
-                                <input type="checkbox" id="clear-cache-toggle">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <div class="setting-item">
-                            <button id="privacy-settings-btn" class="setting-btn">
-                                <div class="setting-content">
-                                    <span class="setting-title">AI privacy controls</span>
-                                    <span class="setting-subtitle">Manage what AI can access</span>
-                                </div>
-                                <span class="setting-arrow">→</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Display & Appearance Section -->
-                    <div class="setting-group">
-                        <h3>🎨 Display & Appearance</h3>
-                        <div class="setting-item">
-                            <button id="theme-btn" class="setting-btn">
-                                <div class="setting-content">
-                                    <span class="setting-title">Theme</span>
-                                    <span class="setting-subtitle" id="theme-status">Auto (follows system)</span>
-                                </div>
-                                <span class="setting-arrow">→</span>
-                            </button>
-                        </div>
-                        <div class="setting-item">
-                            <button id="font-size-btn" class="setting-btn">
-                                <div class="setting-content">
-                                    <span class="setting-title">Text size</span>
-                                    <span class="setting-subtitle" id="font-size-status">Medium</span>
-                                </div>
-                                <span class="setting-arrow">→</span>
-                            </button>
-                        </div>
-                        <div class="setting-item">
-                            <label class="setting-toggle">
-                                <div class="setting-content">
-                                    <span class="setting-title">Compact view</span>
-                                    <span class="setting-subtitle">Show more entries on screen</span>
-                                </div>
-                                <input type="checkbox" id="compact-view-toggle">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- Data Management Section -->
-                    <div class="setting-group">
-                        <h3>💾 Data Management</h3>
-                        <div class="setting-item">
-                            <button id="storage-info-btn" class="setting-btn">
-                                <div class="setting-content">
-                                    <span class="setting-title">Storage usage</span>
-                                    <span class="setting-subtitle" id="storage-status">Calculating...</span>
-                                </div>
-                                <span class="setting-arrow">→</span>
-                            </button>
-                        </div>
-                        <div class="setting-item">
-                            <button id="export-data-btn" class="setting-btn">
-                                <div class="setting-content">
-                                    <span class="setting-title">Export journal data</span>
-                                    <span class="setting-subtitle">Download your entries as JSON</span>
-                                </div>
-                                <span class="setting-arrow">→</span>
-                            </button>
-                        </div>
-                        <div class="setting-item">
-                            <button id="import-data-btn" class="setting-btn">
-                                <div class="setting-content">
-                                    <span class="setting-title">Import journal data</span>
-                                    <span class="setting-subtitle">Restore from backup file</span>
-                                </div>
-                                <span class="setting-arrow">→</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Notifications Section -->
-                    <div class="setting-group">
-                        <h3>🔔 Notifications & Reminders</h3>
-                        <div class="setting-item">
-                            <label class="setting-toggle">
-                                <div class="setting-content">
-                                    <span class="setting-title">Daily journal reminders</span>
-                                    <span class="setting-subtitle">Get reminded to write daily</span>
-                                </div>
-                                <input type="checkbox" id="daily-reminders-toggle">
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                        <div class="setting-item">
-                            <button id="reminder-time-btn" class="setting-btn">
-                                <div class="setting-content">
-                                    <span class="setting-title">Reminder time</span>
-                                    <span class="setting-subtitle" id="reminder-time-status">8:00 PM</span>
-                                </div>
-                                <span class="setting-arrow">→</span>
-                            </button>
-                        </div>
-                        <div class="setting-item">
-                            <label class="setting-toggle">
-                                <div class="setting-content">
-                                    <span class="setting-title">Achievement notifications</span>
-                                    <span class="setting-subtitle">Celebrate writing streaks</span>
-                                </div>
-                                <input type="checkbox" id="achievement-notifications-toggle" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <!-- About Section -->
-                    <div class="setting-group">
-                        <h3>ℹ️ About</h3>
-                        <div class="setting-item">
-                            <button id="about-app-btn" class="setting-btn">
-                                <div class="setting-content">
-                                    <span class="setting-title">About Audio-Photo Journal</span>
-                                    <span class="setting-subtitle">Version 2.0.0 with AI</span>
-                                </div>
-                                <span class="setting-arrow">→</span>
-                            </button>
-                        </div>
-                        <div class="setting-item">
-                            <button id="help-support-btn" class="setting-btn">
-                                <div class="setting-content">
-                                    <span class="setting-title">Help & Support</span>
-                                    <span class="setting-subtitle">Get help using the app</span>
-                                </div>
-                                <span class="setting-arrow">→</span>
-                            </button>
-                        </div>
-                        <div class="setting-item">
-                            <button id="privacy-policy-btn" class="setting-btn">
-                                <div class="setting-content">
-                                    <span class="setting-title">Privacy Policy</span>
-                                    <span class="setting-subtitle">How we protect your data</span>
-                                </div>
-                                <span class="setting-arrow">→</span>
-                            </button>
-                        </div>
-                    </div>
-
-                    <!-- Danger Zone Section -->
-                    <div class="setting-group danger-zone">
-                        <h3>⚠️ Advanced</h3>
-                        <div class="setting-item">
-                            <button id="clear-cache-btn" class="setting-btn">
-                                <div class="setting-content">
-                                    <span class="setting-title">Clear app cache</span>
-                                    <span class="setting-subtitle">Free up storage space</span>
-                                </div>
-                                <span class="setting-arrow">→</span>
-                            </button>
-                        </div>
-                        <div class="setting-item">
-                            <button id="delete-entries-btn" class="setting-btn danger">
-                                <div class="setting-content">
-                                    <span class="setting-title">Delete all entries</span>
-                                    <span class="setting-subtitle">Permanently remove all journal entries</span>
-                                </div>
-                                <span class="setting-arrow">→</span>
-                            </button>
-                        </div>
-                        <div class="setting-item">
-                            <button id="reset-app-btn" class="setting-btn danger">
-                                <div class="setting-content">
-                                    <span class="setting-title">Reset app data</span>
-                                    <span class="setting-subtitle">Delete everything and start fresh</span>
-                                </div>
-                                <span class="setting-arrow">→</span>
-                            </button>
-                        </div>
-                    </div>
-
                 </div>
             </section>
-
         </main>
-
-        <!-- Bottom Navigation -->
-        <nav class="bottom-nav">
-            <button class="nav-btn active" data-view="timeline">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
-                </svg>
-                <span>Timeline</span>
-            </button>
-            <button class="nav-btn" data-view="create" onclick="showCreateEntry()">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <line x1="12" y1="8" x2="12" y2="16"></line>
-                    <line x1="8" y1="12" x2="16" y2="12"></line>
-                </svg>
-                <span>Create</span>
-            </button>
-            <button class="nav-btn" data-view="settings">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="12" cy="12" r="3"></circle>
-                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-                </svg>
-                <span>Settings</span>
-            </button>
-        </nav>
-
     </div>
 
-    <!-- Hidden File Inputs -->
+    <!-- Hidden file inputs -->
     <input type="file" id="photo-input" accept="image/*" capture="environment" style="display: none;">
-    <input type="file" id="file-input" accept="image/*" multiple style="display: none;">
-
-    <!-- Camera Modal -->
-    <div id="camera-modal" class="camera-modal hidden">
-        <div class="camera-container">
-            <video id="camera-video" autoplay playsinline></video>
-            <canvas id="camera-canvas" style="display: none;"></canvas>
-            <div class="camera-controls">
-                <button id="close-camera" class="camera-btn">Cancel</button>
-                <button id="capture-photo" class="camera-btn primary">
-                    <div class="capture-button"></div>
-                </button>
-                <button id="flip-camera" class="camera-btn">Flip</button>
+    <input type="file" id="file-input" accept="image/*" style="display: none;">
+    
+    <!-- Photo Viewer Modal -->
+    <div id="photo-viewer" class="photo-viewer-modal hidden">
+        <div class="photo-viewer-content">
+            <button class="photo-viewer-close">&times;</button>
+            <img id="photo-viewer-img" alt="Full size photo">
+            <div class="photo-viewer-controls">
+                <button class="photo-viewer-btn" id="photo-viewer-prev">‹</button>
+                <button class="photo-viewer-btn" id="photo-viewer-next">›</button>
             </div>
         </div>
     </div>
@@ -572,32 +340,22 @@
     <!-- Scripts -->
     <script src="app.js"></script>
     <script src="journal.js"></script>
-    <script src="audio.js"></script>
     <script src="camera.js"></script>
+    <script src="audio.js"></script>
     <script src="ai-services-improved.js"></script>
-    <script src="settings.js"></script>
     <script src="photo-manager.js"></script>
+    <script src="settings.js"></script>
     
+    <!-- Service Worker Registration -->
     <script>
-        // Prevent elastic scrolling
-        function preventElasticScrolling(event) {
-            event.preventDefault();
-        }
-        
-        // Initialize app when DOM is loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeApp();
-        });
-        
-        // Register service worker for PWA
         if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
+            window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
-                    .then(function(registration) {
-                        console.log('ServiceWorker registration successful');
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
                     })
-                    .catch(function(err) {
-                        console.log('ServiceWorker registration failed: ', err);
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
                     });
             });
         }
