@@ -1,0 +1,15 @@
+{
+  "git.enableCommitSigning": true,
+  "git.autofetch": true,
+  "git.confirmSync": false,
+  "git.enableSmartCommit": true,
+  "git.suggestSmartCommit": true,
+  "git.defaultCloneDirectory": "~/Desktop/Projects",
+  "git.openRepositoryInParentFolders": "always",
+  "git.useIntegratedAskPass": true,
+  "github.gitAuthentication": true,
+  "github.gitProtocol": "https",
+  "scm.defaultViewMode": "tree",
+  "scm.alwaysShowProviders": true,
+  "terminal.integrated.inheritEnv": true
+}
