@@ -1,5 +1,5 @@
 // ===== Service Worker for Audio-Photo Journal =====
-const CACHE_NAME = 'audio-photo-journal-v1.0.1';
+const CACHE_NAME = 'audio-photo-journal-v1.0.2';
 const RUNTIME_CACHE = 'runtime-cache-v1';
 
 // Core files to cache - only files that definitely exist
@@ -42,36 +42,43 @@ self.addEventListener('install', event => {
     console.log('🔧 Service Worker: Installing...');
     
     event.waitUntil(
-        Promise.all([
-            // Cache core files
-            caches.open(CACHE_NAME).then(cache => {
-                console.log('📦 Service Worker: Caching core files');
-                return cache.addAll(CORE_FILES);
-            }),
+        caches.open(CACHE_NAME).then(async cache => {
+            console.log('📦 Service Worker: Caching core files');
             
-            // Cache optional files individually with better error handling
-            caches.open(CACHE_NAME).then(cache => {
-                return Promise.all(
-                    OPTIONAL_FILES.map(async file => {
-                        try {
-                            // Check if file exists first
-                            const response = await fetch(file);
-                            if (response.ok) {
-                                await cache.put(file, response);
-                                console.log(`✅ Cached optional file: ${file}`);
-                            } else {
-                                console.log(`⚠️ Skipped non-existent file: ${file}`);
-                            }
-                        } catch (err) {
-                            console.log(`⚠️ Failed to cache optional file: ${file}`, err.message);
-                        }
-                    })
-                );
-            })
-        ]).then(() => {
+            try {
+                // Try to cache all core files at once
+                await cache.addAll(CORE_FILES);
+                console.log('✅ Service Worker: Core files cached successfully');
+            } catch (error) {
+                console.error('❌ Service Worker: Core files cache.addAll failed, trying individual files:', error);
+                
+                // Fallback: Cache files individually with error handling
+                for (const file of CORE_FILES) {
+                    try {
+                        await cache.add(file);
+                        console.log(`✅ Cached core file: ${file}`);
+                    } catch (err) {
+                        console.error(`❌ Failed to cache core file: ${file}`, err);
+                        throw err; // Core files are essential, so throw if they fail
+                    }
+                }
+            }
+            
+            // Cache optional files individually (recommended approach)
+            console.log('📦 Service Worker: Caching optional files');
+            for (const file of OPTIONAL_FILES) {
+                try {
+                    await cache.add(file);
+                    console.log(`✅ Cached optional file: ${file}`);
+                } catch (err) {
+                    console.warn(`⚠️ Failed to cache optional file: ${file}`, err.message);
+                    // Continue with other files even if one fails
+                }
+            }
+            
             console.log('✅ Service Worker: Installation complete');
-            // Skip waiting to activate immediately
             return self.skipWaiting();
+            
         }).catch(error => {
             console.error('❌ Service Worker: Installation failed', error);
             throw error;
