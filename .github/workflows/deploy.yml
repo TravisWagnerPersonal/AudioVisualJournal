@@ -11,62 +11,64 @@ permissions:
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, skip runs queued between the run in-progress and latest queued.
-# However, do NOT cancel in-progress runs as we want to allow these production deployments to complete.
+# Allow only one concurrent deployment
 concurrency:
   group: "pages"
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
-  # Build job
-  build:
+  # Single job that builds and deploys
+  build-and-deploy:
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-        
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-        
-      - name: Build site
-        run: |
-          echo "📁 Creating build directory..."
-          mkdir -p _site
-          
-          echo "📄 Copying core files..."
-          cp index.html _site/
-          cp *.js _site/ 2>/dev/null || echo "No JS files found"
-          cp *.css _site/ 2>/dev/null || echo "No CSS files found"
-          cp *.json _site/ 2>/dev/null || echo "No JSON files found"
-          cp *.png _site/ 2>/dev/null || echo "No PNG files found"
-          
-          echo "🖼️ Copying icons directory..."
-          if [ -d "icons" ]; then
-            cp -r icons _site/
-            echo "✅ Icons copied successfully"
-          else
-            echo "⚠️ No icons directory found"
-          fi
-          
-          echo "🧹 Cleaning up unwanted files..."
-          rm -f _site/launch.sh _site/debug.html _site/demo.html 2>/dev/null || true
-          
-          echo "✅ Build complete! Contents:"
-          ls -la _site/
-          
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: './_site'
-
-  # Deployment job
-  deploy:
+    timeout-minutes: 10
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
-    needs: build
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        
+      - name: Create deployment package
+        run: |
+          echo "📁 Creating deployment package..."
+          mkdir -p dist
+          
+          # Copy all necessary files
+          cp index.html dist/
+          cp *.js dist/ || echo "No JS files found"
+          cp *.css dist/ || echo "No CSS files found"
+          cp *.json dist/ || echo "No JSON files found"
+          cp *.png dist/ || echo "No PNG files found"
+          
+          # Copy icons directory if it exists
+          if [ -d "icons" ]; then
+            cp -r icons dist/
+            echo "✅ Icons copied"
+          fi
+          
+          # Verify critical files exist
+          if [ ! -f "dist/index.html" ]; then
+            echo "❌ ERROR: index.html not found!"
+            exit 1
+          fi
+          
+          echo "✅ Deployment package created:"
+          find dist -type f | head -20
+          
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: './dist'
+          
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4 
+        uses: actions/deploy-pages@v4
+        with:
+          timeout: 600000
+          error_count: 10
+          reporting_interval: 5000 
