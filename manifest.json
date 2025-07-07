@@ -20,45 +20,15 @@
   
   "icons": [
     {
-      "src": "icons/icon-72.png",
-      "type": "image/png",
-      "sizes": "72x72",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-96.png",
-      "type": "image/png",
-      "sizes": "96x96",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-128.png",
-      "type": "image/png",
-      "sizes": "128x128",
-      "purpose": "any"
-    },
-    {
       "src": "icons/icon-144.png",
       "type": "image/png",
       "sizes": "144x144",
       "purpose": "any"
     },
     {
-      "src": "icons/icon-152.png",
-      "type": "image/png",
-      "sizes": "152x152",
-      "purpose": "any"
-    },
-    {
       "src": "icons/icon-192.png",
       "type": "image/png",
       "sizes": "192x192",
-      "purpose": "any"
-    },
-    {
-      "src": "icons/icon-384.png",
-      "type": "image/png",
-      "sizes": "384x384",
       "purpose": "any"
     },
     {
@@ -110,8 +80,8 @@
       "url": "/?action=new-entry",
       "icons": [
         {
-          "src": "icons/shortcut-new.png",
-          "sizes": "96x96"
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
         }
       ]
     },
@@ -122,8 +92,8 @@
       "url": "/?action=voice-note",
       "icons": [
         {
-          "src": "icons/shortcut-voice.png",
-          "sizes": "96x96"
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
         }
       ]
     }
