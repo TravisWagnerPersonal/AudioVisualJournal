@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    
+    <!-- iOS Native App Meta Tags -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="Audio Journal">
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="manifest.json">
+    
+    <!-- Icons -->
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+    
+    <!-- Startup Images -->
+    <link rel="apple-touch-startup-image" href="startup.png">
+    
+    <title>Audio-Photo Journal</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="mobile.css">
+    <link rel="stylesheet" href="photo-viewer.css">
+    
+    <!-- Force deployment refresh - Modern Design v2.0 -->
+</head>
+<body>
+    
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading">
+        <div class="spinner"></div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app" class="app-container fade-in" style="display: none;">
+        
+        <!-- App Header -->
+        <header class="app-header">
+            <h1 class="app-title">Audio Journal</h1>
+            <p class="app-subtitle">Capture life's moments with photos, voice, and words</p>
+        </header>
+
+        <!-- Navigation -->
+        <nav class="nav-container">
+            <div class="nav">
+                <div class="nav-item">
+                    <button class="nav-btn active" data-view="timeline">
+                        📝 Journal
+                    </button>
+                </div>
+                <div class="nav-item">
+                    <button class="nav-btn" data-view="create">
+                        ➕ New Entry
+                    </button>
+                </div>
+                <div class="nav-item">
+                    <button class="nav-btn" data-view="search">
+                        🔍 Search
+                    </button>
+                </div>
+                <div class="nav-item">
+                    <button class="nav-btn" data-view="settings">
+                        ⚙️ Settings
+                    </button>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            
+            <!-- Timeline View (Default) -->
+            <section id="timeline-view" class="view active">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="card-icon">📖</div>
+                            Your Journal
+                        </div>
+                        <div class="btn-group">
+                            <button class="btn btn-secondary" data-view-mode="list">List</button>
+                            <button class="btn btn-primary" data-view-mode="grid">Grid</button>
+                        </div>
+                    </div>
+                    
+                    <div id="entries-container" class="entries-grid">
+                        <!-- Journal entries will be dynamically inserted here -->
+                    </div>
+                    
+                    <div id="empty-state" class="empty-state">
+                        <div class="empty-state-icon">📝</div>
+                        <div class="empty-state-text">Start Your Journey</div>
+                        <p>Capture your thoughts, moments, and memories with audio and photos.</p>
+                        <button class="btn btn-primary btn-lg" onclick="showCreateEntry()">Create Your First Entry</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Create/Edit Entry View -->
+            <section id="create-view" class="view">
+                <form class="journal-form">
+                    
+                    <!-- Entry Title -->
+                    <div class="section">
+                        <div class="section-title">
+                            <div class="section-icon">✍️</div>
+                            What's on your mind?
+                        </div>
+                        <div class="form-group">
+                            <input type="text" id="entry-title" class="form-input" placeholder="Give your entry a title..." maxlength="100">
+                        </div>
+                        <div class="form-group">
+                            <textarea id="entry-content" class="form-textarea" placeholder="Write about your day, thoughts, or anything that comes to mind..." rows="6"></textarea>
+                        </div>
+                    </div>
+                    
+                    <!-- Photos Section -->
+                    <div class="section">
+                        <div class="section-title">
+                            <div class="section-icon">📷</div>
+                            Photos
+                        </div>
+                        <div class="media-grid">
+                            <div class="media-control" id="take-photo">
+                                <div class="media-control-icon">📸</div>
+                                <div class="media-control-text">Take Photo</div>
+                            </div>
+                            <div class="media-control" id="select-photo">
+                                <div class="media-control-icon">🖼️</div>
+                                <div class="media-control-text">Choose Photo</div>
+                            </div>
+                        </div>
+                        <div id="photo-preview" class="photo-preview mt-4"></div>
+                    </div>
+                    
+                    <!-- Audio Section -->
+                    <div class="section">
+                        <div class="section-title">
+                            <div class="section-icon">🎤</div>
+                            Audio Recording
+                        </div>
+                        <div class="audio-recorder">
+                            <button id="record-btn" class="record-button" type="button">
+                                🎤
+                            </button>
+                            <div id="recording-timer" class="recording-timer hidden">00:00</div>
+                            <p>Tap to record your voice</p>
+                        </div>
+                        <div id="audio-preview" class="audio-preview mt-4"></div>
+                    </div>
+                    
+                    <!-- Mood & Tags -->
+                    <div class="section">
+                        <div class="mood-selector">
+                            <div class="mood-title">How are you feeling?</div>
+                            <div class="mood-options">
+                                <button type="button" class="mood-option" data-mood="happy">😊</button>
+                                <button type="button" class="mood-option" data-mood="sad">😢</button>
+                                <button type="button" class="mood-option" data-mood="excited">🤩</button>
+                                <button type="button" class="mood-option" data-mood="calm">😌</button>
+                                <button type="button" class="mood-option" data-mood="anxious">😰</button>
+                                <button type="button" class="mood-option" data-mood="grateful">🙏</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="btn-group">
+                        <button type="button" id="cancel-create" class="btn btn-secondary">Cancel</button>
+                        <button type="button" id="ai-assist-btn" class="btn btn-accent">🤖 AI Assist</button>
+                        <button type="submit" id="save-entry" class="btn btn-success btn-lg">Save Entry</button>
+                    </div>
+                </form>
+
+                <!-- AI Assistant Panel -->
+                <div id="ai-panel" class="card mt-6 hidden">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="card-icon">🤖</div>
+                            AI Assistant
+                        </div>
+                        <button id="ai-panel-close" class="btn btn-secondary">×</button>
+                    </div>
+                    <div class="ai-status" id="ai-status">Ready to help you create amazing journal entries!</div>
+                    <div class="btn-group">
+                        <button id="ai-analyze-photo" class="btn btn-secondary">📷 Analyze Photos</button>
+                        <button id="ai-transcribe-audio" class="btn btn-secondary">🎤 Transcribe Audio</button>
+                        <button id="ai-generate-entry" class="btn btn-primary">✨ Generate Entry</button>
+                    </div>
+                    <div id="ai-results" class="mt-4 hidden"></div>
+                </div>
+            </section>
+
+            <!-- Search View -->
+            <section id="search-view" class="view">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="card-icon">🔍</div>
+                            Search Your Journal
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <input type="text" id="search-input" class="form-input" placeholder="Search entries by title, content, or tags..." autocomplete="off">
+                    </div>
+                    <div id="search-results" class="entries-grid mt-6">
+                        <div class="empty-state">
+                            <div class="empty-state-icon">🔍</div>
+                            <div class="empty-state-text">Start typing to search</div>
+                            <p>Find entries by keywords, dates, moods, or tags.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Settings View -->
+            <section id="settings-view" class="view">
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="card-icon">⚙️</div>
+                            Settings
+                        </div>
+                    </div>
+                    
+                    <!-- AI Features -->
+                    <div class="section">
+                        <div class="section-title">
+                            <div class="section-icon">🤖</div>
+                            AI Features
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="auto-generate-toggle"> Auto-generate entries with AI
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="speech-recognition-toggle"> Enable speech recognition
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="auto-tag-toggle"> Auto-tag with AI
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Journal Preferences -->
+                    <div class="section">
+                        <div class="section-title">
+                            <div class="section-icon">📝</div>
+                            Journal Preferences
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="auto-save-toggle" checked> Auto-save drafts
+                            </label>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="show-dates-toggle" checked> Show date stamps
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- Data Management -->
+                    <div class="section">
+                        <div class="section-title">
+                            <div class="section-icon">💾</div>
+                            Data Management
+                        </div>
+                        <div class="btn-group">
+                            <button id="export-data-btn" class="btn btn-secondary">📤 Export Data</button>
+                            <button id="import-data-btn" class="btn btn-secondary">📥 Import Data</button>
+                        </div>
+                        <div class="btn-group mt-4">
+                            <button id="clear-entries-btn" class="btn btn-accent">🗑️ Delete All Entries</button>
+                            <button id="reset-app-btn" class="btn btn-accent">🔄 Reset App</button>
+                        </div>
+                    </div>
+
+                    <!-- Storage Info -->
+                    <div class="section">
+                        <div class="section-title">
+                            <div class="section-icon">📊</div>
+                            Storage Usage
+                        </div>
+                        <div id="storage-info" class="text-center">
+                            <p id="storage-status">Calculating storage usage...</p>
+                        </div>
+                    </div>
+
+                    <!-- About -->
+                    <div class="section">
+                        <div class="section-title">
+                            <div class="section-icon">ℹ️</div>
+                            About
+                        </div>
+                        <div class="text-center">
+                            <h3>Audio-Photo Journal</h3>
+                            <p>Version 2.0.0 with AI Integration</p>
+                            <p class="mt-2">A beautiful, private journaling app that captures your thoughts, photos, and voice recordings.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Entry Detail View -->
+            <section id="detail-view" class="view">
+                <div class="card">
+                    <div class="card-header">
+                        <button id="back-to-timeline" class="btn btn-secondary">← Back</button>
+                        <button id="edit-entry" class="btn btn-primary">Edit</button>
+                    </div>
+                    <div id="detail-content" class="detail-content">
+                        <!-- Entry details will be dynamically loaded here -->
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Hidden file inputs -->
+    <input type="file" id="photo-input" accept="image/*" capture="environment" style="display: none;">
+    <input type="file" id="file-input" accept="image/*" style="display: none;">
+    
+    <!-- Photo Viewer Modal -->
+    <div id="photo-viewer" class="photo-viewer-modal hidden">
+        <div class="photo-viewer-content">
+            <button class="photo-viewer-close">&times;</button>
+            <img id="photo-viewer-img" alt="Full size photo">
+            <div class="photo-viewer-controls">
+                <button class="photo-viewer-btn" id="photo-viewer-prev">‹</button>
+                <button class="photo-viewer-btn" id="photo-viewer-next">›</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="app.js"></script>
+    <script src="journal.js"></script>
+    <script src="camera.js"></script>
+    <script src="audio.js"></script>
+    <script src="ai-services-improved.js"></script>
+    <script src="photo-manager.js"></script>
+    <script src="settings.js"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then((registration) => {
+                        console.log('SW registered: ', registration);
+                    })
+                    .catch((registrationError) => {
+                        console.log('SW registration failed: ', registrationError);
+                    });
+            });
+        }
+    </script>
+</body>
+</html> 

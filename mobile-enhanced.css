@@ -1,0 +1,389 @@
+/* ===== Enhanced Mobile-Specific Styles ===== */
+
+/* Better touch targets for mobile */
+@media (max-width: 768px) {
+    
+    /* Enhanced touch targets */
+    .header-btn,
+    .nav-btn,
+    .mood-btn,
+    .media-btn,
+    .ai-action-btn {
+        min-width: 48px;
+        min-height: 48px;
+        touch-action: manipulation;
+    }
+    
+    /* Improved spacing for mobile */
+    .timeline-view {
+        padding: 16px 12px;
+    }
+    
+    .timeline-header {
+        padding: 16px 20px;
+        margin-bottom: 20px;
+        border-radius: 12px;
+    }
+    
+    .timeline-header h2 {
+        font-size: 20px;
+    }
+    
+    .create-content {
+        padding: 16px 12px;
+    }
+    
+    /* Enhanced entry cards for mobile */
+    .entry-card {
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 12px;
+    }
+    
+    .entry-title {
+        font-size: 16px;
+        line-height: 1.4;
+    }
+    
+    .entry-date {
+        font-size: 13px;
+    }
+    
+    /* Better input styling for mobile */
+    .input-group {
+        margin-bottom: 20px;
+    }
+    
+    .input-group input,
+    .input-group textarea {
+        font-size: 16px; /* Prevents zoom on iOS */
+        padding: 14px;
+        border-radius: 10px;
+    }
+    
+    .input-group label {
+        font-size: 15px;
+        margin-bottom: 6px;
+    }
+    
+    /* Enhanced media sections for mobile */
+    .media-section {
+        padding: 16px;
+        border-radius: 12px;
+        margin-bottom: 20px;
+    }
+    
+    .media-section h3 {
+        font-size: 16px;
+        margin-bottom: 12px;
+    }
+    
+    .photo-controls,
+    .audio-controls {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .media-btn {
+        padding: 14px 16px;
+        font-size: 14px;
+        border-radius: 10px;
+    }
+    
+    /* Enhanced record button for mobile */
+    .record-btn {
+        padding: 18px;
+        border-radius: 12px;
+        font-size: 15px;
+    }
+    
+    /* Better mood selector for mobile */
+    .mood-options {
+        gap: 10px;
+        justify-content: center;
+    }
+    
+    .mood-btn {
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
+        border-radius: 10px;
+    }
+    
+    /* Enhanced AI panel for mobile */
+    .ai-panel {
+        border-radius: 16px;
+        margin-bottom: 20px;
+    }
+    
+    .ai-panel-header {
+        padding: 16px 20px;
+    }
+    
+    .ai-panel-header h3 {
+        font-size: 18px;
+    }
+    
+    .ai-panel-content {
+        padding: 0 20px 20px;
+    }
+    
+    .ai-action-btn {
+        padding: 14px 16px;
+        font-size: 14px;
+        border-radius: 10px;
+    }
+    
+    /* Enhanced bottom navigation for mobile */
+    .bottom-nav {
+        padding: 8px 16px 16px;
+    }
+    
+    .nav-btn {
+        padding: 10px 8px;
+        min-width: 50px;
+        border-radius: 10px;
+    }
+    
+    .nav-btn svg {
+        width: 22px;
+        height: 22px;
+    }
+    
+    .nav-btn span {
+        font-size: 11px;
+        margin-top: 2px;
+    }
+    
+    /* Enhanced search for mobile */
+    .search-container {
+        padding: 10px 16px;
+    }
+    
+    .search-bar {
+        border-radius: 12px;
+    }
+    
+    .search-bar input {
+        padding: 14px 16px;
+        font-size: 16px;
+    }
+    
+    /* Enhanced settings for mobile */
+    .settings-content {
+        padding: 16px 12px 120px;
+    }
+    
+    .setting-group {
+        border-radius: 12px;
+        margin-bottom: 16px;
+    }
+    
+    .setting-item {
+        padding: 14px 16px;
+    }
+    
+    .setting-title {
+        font-size: 15px;
+    }
+    
+    .setting-subtitle {
+        font-size: 13px;
+    }
+    
+    /* Better toggle switches for mobile */
+    .toggle-slider {
+        width: 48px;
+        height: 28px;
+    }
+    
+    .toggle-slider:before {
+        height: 24px;
+        width: 24px;
+        left: 2px;
+        bottom: 2px;
+    }
+    
+    .setting-toggle input[type="checkbox"]:checked + .toggle-slider:before {
+        transform: translateX(20px);
+    }
+}
+
+/* Extra small screens (iPhone SE, etc.) */
+@media (max-width: 375px) {
+    .header-content {
+        padding: 10px 12px;
+    }
+    
+    .app-title {
+        font-size: 18px;
+    }
+    
+    .timeline-view {
+        padding: 12px 8px;
+    }
+    
+    .timeline-header {
+        padding: 12px 16px;
+        flex-direction: column;
+        gap: 12px;
+        text-align: center;
+    }
+    
+    .view-controls {
+        align-self: stretch;
+        justify-content: center;
+    }
+    
+    .create-content {
+        padding: 12px 8px;
+    }
+    
+    .entry-card {
+        padding: 14px;
+    }
+    
+    .media-section,
+    .metadata-section {
+        padding: 14px;
+    }
+    
+    .mood-options {
+        gap: 8px;
+    }
+    
+    .mood-btn {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+    }
+    
+    .bottom-nav {
+        padding: 6px 12px 12px;
+    }
+    
+    .nav-btn {
+        padding: 8px 4px;
+        min-width: 45px;
+    }
+    
+    .nav-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+    
+    .nav-btn span {
+        font-size: 10px;
+    }
+}
+
+/* Enhanced animations and interactions */
+@media (hover: hover) and (pointer: fine) {
+    /* Only apply hover effects on devices with precise pointers */
+    .entry-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    }
+    
+    .media-btn:hover {
+        transform: translateY(-2px);
+    }
+    
+    .mood-btn:hover {
+        transform: translateY(-2px) scale(1.05);
+    }
+    
+    .nav-btn:hover {
+        transform: translateY(-2px);
+    }
+    
+    .ai-action-btn:hover {
+        transform: translateY(-2px);
+    }
+}
+
+/* Improved scrolling for mobile */
+.main-content {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+.create-content {
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
+}
+
+/* Enhanced focus states for accessibility */
+.header-btn:focus,
+.nav-btn:focus,
+.media-btn:focus,
+.mood-btn:focus,
+.ai-action-btn:focus,
+.record-btn:focus,
+.cta-button:focus {
+    outline: 2px solid #667eea;
+    outline-offset: 2px;
+}
+
+.input-group input:focus,
+.input-group textarea:focus {
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+}
+
+/* Safe area insets for newer iPhones */
+@supports (padding: max(0px)) {
+    .app-header {
+        padding-top: max(env(safe-area-inset-top), 0px);
+    }
+    
+    .bottom-nav {
+        padding-bottom: max(env(safe-area-inset-bottom), 16px);
+    }
+}
+
+/* Prevent text selection on touch devices */
+@media (pointer: coarse) {
+    .entry-card,
+    .header-btn,
+    .nav-btn,
+    .media-btn,
+    .mood-btn,
+    .ai-action-btn {
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
+    }
+}
+
+/* Enhanced loading screen for mobile */
+@media (max-width: 768px) {
+    .loading-screen h2 {
+        font-size: 24px;
+        margin-bottom: 8px;
+    }
+    
+    .loading-screen p {
+        font-size: 16px;
+    }
+    
+    .loading-spinner {
+        width: 60px;
+        height: 60px;
+        margin-bottom: 24px;
+    }
+}
+
+/* High DPI display optimizations */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .entry-card,
+    .media-section,
+    .metadata-section,
+    .ai-panel {
+        box-shadow: 0 2px 10px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.06);
+    }
+    
+    .timeline-header {
+        box-shadow: 0 2px 15px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.06);
+    }
+} 
