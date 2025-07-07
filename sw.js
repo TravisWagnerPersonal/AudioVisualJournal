@@ -1,5 +1,5 @@
 // ===== Service Worker for Audio-Photo Journal =====
-const CACHE_NAME = 'audio-photo-journal-v1.0.4';
+const CACHE_NAME = 'audio-photo-journal-v1.0.5';
 const RUNTIME_CACHE = 'runtime-cache-v1';
 
 // Core files to cache - using relative paths for better compatibility
@@ -175,9 +175,15 @@ async function handleApiRequest(request) {
         const networkResponse = await fetch(request);
         
         // Cache successful responses
-        if (networkResponse.ok) {
-            const cache = await caches.open(RUNTIME_CACHE);
-            cache.put(request, networkResponse.clone());
+        if (networkResponse && networkResponse.ok) {
+            try {
+                const cache = await caches.open(RUNTIME_CACHE);
+                // Clone BEFORE consumption
+                await cache.put(request, networkResponse.clone());
+                console.log('🌐 API response cached:', request.url);
+            } catch (cacheError) {
+                console.warn('⚠️ Failed to cache API response:', request.url, cacheError.message);
+            }
         }
         
         return networkResponse;
@@ -186,12 +192,17 @@ async function handleApiRequest(request) {
         console.log('📡 Service Worker: Network failed, trying cache:', request.url);
         
         // Fallback to cache
-        const cachedResponse = await caches.match(request);
-        if (cachedResponse) {
-            return cachedResponse;
+        try {
+            const cachedResponse = await caches.match(request);
+            if (cachedResponse) {
+                console.log('📡 Serving API from cache:', request.url);
+                return cachedResponse;
+            }
+        } catch (cacheError) {
+            console.warn('⚠️ Cache lookup failed:', cacheError.message);
         }
         
-        // Return offline page or error response
+        // Return offline response
         return new Response(
             JSON.stringify({ error: 'Offline - data not available' }),
             {
@@ -207,9 +218,14 @@ async function handleImageRequest(request) {
     console.log('🖼️ Service Worker: Image request:', request.url);
     
     // Check cache first
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-        return cachedResponse;
+    try {
+        const cachedResponse = await caches.match(request);
+        if (cachedResponse) {
+            console.log('🖼️ Serving image from cache:', request.url);
+            return cachedResponse;
+        }
+    } catch (cacheError) {
+        console.warn('⚠️ Image cache lookup failed:', cacheError.message);
     }
     
     try {
@@ -217,17 +233,23 @@ async function handleImageRequest(request) {
         const networkResponse = await fetch(request);
         
         // Cache successful responses
-        if (networkResponse.ok) {
-            const cache = await caches.open(RUNTIME_CACHE);
-            cache.put(request, networkResponse.clone());
+        if (networkResponse && networkResponse.ok) {
+            try {
+                const cache = await caches.open(RUNTIME_CACHE);
+                // Clone BEFORE consumption
+                await cache.put(request, networkResponse.clone());
+                console.log('🖼️ Image cached:', request.url);
+            } catch (cacheError) {
+                console.warn('⚠️ Failed to cache image:', request.url, cacheError.message);
+            }
         }
         
         return networkResponse;
         
     } catch (error) {
-        console.log('🖼️ Service Worker: Image fetch failed:', request.url);
+        console.warn('🖼️ Service Worker: Image fetch failed:', request.url, error.message);
         
-        // Return placeholder or error image
+        // Return placeholder response
         return new Response('', {
             status: 404,
             statusText: 'Image not found'
@@ -239,9 +261,14 @@ async function handleAudioRequest(request) {
     console.log('🎵 Service Worker: Audio request:', request.url);
     
     // Check cache first
-    const cachedResponse = await caches.match(request);
-    if (cachedResponse) {
-        return cachedResponse;
+    try {
+        const cachedResponse = await caches.match(request);
+        if (cachedResponse) {
+            console.log('🎵 Serving audio from cache:', request.url);
+            return cachedResponse;
+        }
+    } catch (cacheError) {
+        console.warn('⚠️ Audio cache lookup failed:', cacheError.message);
     }
     
     try {
@@ -249,15 +276,21 @@ async function handleAudioRequest(request) {
         const networkResponse = await fetch(request);
         
         // Cache successful responses
-        if (networkResponse.ok) {
-            const cache = await caches.open(RUNTIME_CACHE);
-            cache.put(request, networkResponse.clone());
+        if (networkResponse && networkResponse.ok) {
+            try {
+                const cache = await caches.open(RUNTIME_CACHE);
+                // Clone BEFORE consumption
+                await cache.put(request, networkResponse.clone());
+                console.log('🎵 Audio cached:', request.url);
+            } catch (cacheError) {
+                console.warn('⚠️ Failed to cache audio:', request.url, cacheError.message);
+            }
         }
         
         return networkResponse;
         
     } catch (error) {
-        console.log('🎵 Service Worker: Audio fetch failed:', request.url);
+        console.warn('🎵 Service Worker: Audio fetch failed:', request.url, error.message);
         
         return new Response('', {
             status: 404,
@@ -273,33 +306,61 @@ async function handleStaticRequest(request) {
         // Try cache first
         const cachedResponse = await caches.match(request);
         
-        // Fetch from network (stale-while-revalidate)
-        const networkPromise = fetch(request).then(networkResponse => {
-            if (networkResponse.ok) {
-                const cache = caches.open(CACHE_NAME);
-                cache.then(c => c.put(request, networkResponse.clone()));
-            }
-            return networkResponse;
-        }).catch(() => null);
-        
-        // Return cached version immediately if available
+        // If we have a cached version, return it and update in background
         if (cachedResponse) {
-            // Update cache in background
-            networkPromise.catch(() => {});
+            console.log('📄 Serving from cache:', request.url);
+            
+            // Update cache in background (stale-while-revalidate)
+            fetch(request).then(async networkResponse => {
+                if (networkResponse && networkResponse.ok) {
+                    try {
+                        const cache = await caches.open(CACHE_NAME);
+                        await cache.put(request, networkResponse.clone());
+                        console.log('📄 Background cache update successful:', request.url);
+                    } catch (error) {
+                        console.warn('⚠️ Background cache update failed:', request.url, error.message);
+                    }
+                }
+            }).catch(error => {
+                console.warn('⚠️ Background fetch failed:', request.url, error.message);
+            });
+            
             return cachedResponse;
         }
         
-        // Wait for network if no cache
-        const networkResponse = await networkPromise;
-        if (networkResponse) {
-            return networkResponse;
+        // No cache available, fetch from network
+        console.log('📄 Fetching from network:', request.url);
+        const networkResponse = await fetch(request);
+        
+        if (networkResponse && networkResponse.ok) {
+            try {
+                // Clone BEFORE any consumption
+                const responseClone = networkResponse.clone();
+                const cache = await caches.open(CACHE_NAME);
+                await cache.put(request, responseClone);
+                console.log('📄 Cached new response:', request.url);
+            } catch (error) {
+                console.warn('⚠️ Failed to cache response:', request.url, error.message);
+            }
         }
         
-        // Fallback to offline page
-        return await getOfflinePage();
+        return networkResponse;
         
     } catch (error) {
-        console.log('📄 Service Worker: Static request failed:', request.url);
+        console.error('📄 Service Worker: Static request failed:', request.url, error.message);
+        
+        // Try to serve from cache as fallback
+        try {
+            const fallbackResponse = await caches.match(request);
+            if (fallbackResponse) {
+                console.log('📄 Serving fallback from cache:', request.url);
+                return fallbackResponse;
+            }
+        } catch (cacheError) {
+            console.warn('⚠️ Cache fallback failed:', cacheError.message);
+        }
+        
+        // Last resort: return offline page
         return await getOfflinePage();
     }
 }
