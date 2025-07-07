@@ -1,31 +1,31 @@
 // ===== Service Worker for Audio-Photo Journal =====
-const CACHE_NAME = 'audio-photo-journal-v1.0.3';
+const CACHE_NAME = 'audio-photo-journal-v1.0.4';
 const RUNTIME_CACHE = 'runtime-cache-v1';
 
-// Core files to cache - only files that definitely exist
+// Core files to cache - using relative paths for better compatibility
 const CORE_FILES = [
-    '/index.html',
-    '/styles.css',
-    '/app.js',
-    '/journal.js',
-    '/audio.js',
-    '/camera.js',
-    '/manifest.json'
+    './index.html',
+    './styles.css',
+    './app.js',
+    './journal.js',
+    './audio.js',
+    './camera.js',
+    './manifest.json'
 ];
 
-// Optional files to cache - check before caching
+// Optional files to cache - using relative paths
 const OPTIONAL_FILES = [
-    '/icons/icon-144.png',
-    '/icons/icon-192.png',
-    '/icons/icon-512.png',
-    '/icons/maskable-icon.png',
-    '/icons/favicon-32x32.png',
-    '/startup.png',
-    '/ai-services-improved.js',
-    '/photo-manager.js',
-    '/settings.js',
-    '/mobile.css',
-    '/photo-viewer.css'
+    './icons/icon-144.png',
+    './icons/icon-192.png',
+    './icons/icon-512.png',
+    './icons/maskable-icon.png',
+    './icons/favicon-32x32.png',
+    './startup.png',
+    './ai-services-improved.js',
+    './photo-manager.js',
+    './settings.js',
+    './mobile.css',
+    './photo-viewer.css'
 ];
 
 // Runtime caching patterns
@@ -39,10 +39,26 @@ const CACHE_STRATEGIES = {
 // ===== Installation =====
 self.addEventListener('install', event => {
     console.log('🔧 Service Worker: Installing...');
+    console.log('🔧 Service Worker scope:', self.registration.scope);
+    console.log('🔧 Service Worker location:', self.location.href);
     
     event.waitUntil(
         caches.open(CACHE_NAME).then(async cache => {
             console.log('📦 Service Worker: Caching core files:', CORE_FILES);
+            
+            // Test each file individually first (Stack Overflow debugging approach)
+            console.log('🧪 Testing file accessibility in service worker context...');
+            for (const file of CORE_FILES) {
+                try {
+                    const response = await fetch(file);
+                    console.log(`🧪 Test fetch ${file}: ${response.status} ${response.statusText}`);
+                    if (!response.ok) {
+                        console.error(`❌ File not accessible: ${file} - Status: ${response.status}`);
+                    }
+                } catch (err) {
+                    console.error(`❌ Test fetch failed for ${file}:`, err.message);
+                }
+            }
             
             try {
                 // Try to cache all core files at once
@@ -54,8 +70,14 @@ self.addEventListener('install', event => {
                 // Fallback: Cache files individually with detailed error handling (Stack Overflow approach)
                 for (const file of CORE_FILES) {
                     try {
-                        await cache.add(file);
-                        console.log(`✅ Cached core file: ${file}`);
+                        const response = await fetch(file);
+                        if (response.ok) {
+                            await cache.put(file, response);
+                            console.log(`✅ Cached core file via put(): ${file}`);
+                        } else {
+                            console.error(`❌ File returned ${response.status}: ${file}`);
+                            throw new Error(`File returned ${response.status}: ${file}`);
+                        }
                     } catch (err) {
                         console.error(`❌ Failed to cache core file: ${file} - ${err.message}`);
                         throw new Error(`Critical core file failed to cache: ${file}`);
@@ -67,8 +89,13 @@ self.addEventListener('install', event => {
             console.log('📦 Service Worker: Caching optional files:', OPTIONAL_FILES.length, 'files');
             for (const file of OPTIONAL_FILES) {
                 try {
-                    await cache.add(file);
-                    console.log(`✅ Cached optional file: ${file}`);
+                    const response = await fetch(file);
+                    if (response.ok) {
+                        await cache.put(file, response);
+                        console.log(`✅ Cached optional file: ${file}`);
+                    } else {
+                        console.warn(`⚠️ Optional file returned ${response.status}: ${file}`);
+                    }
                 } catch (err) {
                     console.warn(`⚠️ Failed to cache optional file: ${file} - ${err.message}`);
                     // Continue with other files even if one fails
