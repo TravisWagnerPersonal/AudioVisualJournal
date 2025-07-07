@@ -1,5 +1,5 @@
 // ===== Service Worker for Audio-Photo Journal =====
-const CACHE_NAME = 'audio-photo-journal-v1.0.5';
+const CACHE_NAME = 'audio-photo-journal-v1.0.6';
 const RUNTIME_CACHE = 'runtime-cache-v1';
 
 // Core files to cache - using relative paths for better compatibility
@@ -311,11 +311,14 @@ async function handleStaticRequest(request) {
             console.log('📄 Serving from cache:', request.url);
             
             // Update cache in background (stale-while-revalidate)
+            // BUT with proper response cloning
             fetch(request).then(async networkResponse => {
                 if (networkResponse && networkResponse.ok) {
                     try {
+                        // Clone IMMEDIATELY upon receiving response
+                        const responseClone = networkResponse.clone();
                         const cache = await caches.open(CACHE_NAME);
-                        await cache.put(request, networkResponse.clone());
+                        await cache.put(request, responseClone);
                         console.log('📄 Background cache update successful:', request.url);
                     } catch (error) {
                         console.warn('⚠️ Background cache update failed:', request.url, error.message);
@@ -334,7 +337,7 @@ async function handleStaticRequest(request) {
         
         if (networkResponse && networkResponse.ok) {
             try {
-                // Clone BEFORE any consumption
+                // Clone IMMEDIATELY - this is the critical fix
                 const responseClone = networkResponse.clone();
                 const cache = await caches.open(CACHE_NAME);
                 await cache.put(request, responseClone);
