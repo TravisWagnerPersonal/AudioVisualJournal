@@ -1,8 +1,8 @@
 // ===== Service Worker for Audio-Photo Journal =====
-const CACHE_NAME = 'audio-photo-journal-v1.0.0';
+const CACHE_NAME = 'audio-photo-journal-v1.0.1';
 const RUNTIME_CACHE = 'runtime-cache-v1';
 
-// Core files to cache
+// Core files to cache - only files that definitely exist
 const CORE_FILES = [
     '/',
     '/index.html',
@@ -14,12 +14,19 @@ const CORE_FILES = [
     '/manifest.json'
 ];
 
-// Optional files to cache
+// Optional files to cache - check before caching
 const OPTIONAL_FILES = [
+    '/icons/icon-144.png',
     '/icons/icon-192.png',
     '/icons/icon-512.png',
     '/icons/maskable-icon.png',
-    '/startup.png'
+    '/icons/favicon-32x32.png',
+    '/startup.png',
+    '/ai-services-improved.js',
+    '/photo-manager.js',
+    '/settings.js',
+    '/mobile.css',
+    '/photo-viewer.css'
 ];
 
 // Runtime caching patterns
@@ -42,20 +49,32 @@ self.addEventListener('install', event => {
                 return cache.addAll(CORE_FILES);
             }),
             
-            // Cache optional files (don't fail if some are missing)
+            // Cache optional files individually with better error handling
             caches.open(CACHE_NAME).then(cache => {
-                return Promise.allSettled(
-                    OPTIONAL_FILES.map(file => 
-                        cache.add(file).catch(err => 
-                            console.warn(`Failed to cache optional file: ${file}`, err)
-                        )
-                    )
+                return Promise.all(
+                    OPTIONAL_FILES.map(async file => {
+                        try {
+                            // Check if file exists first
+                            const response = await fetch(file);
+                            if (response.ok) {
+                                await cache.put(file, response);
+                                console.log(`✅ Cached optional file: ${file}`);
+                            } else {
+                                console.log(`⚠️ Skipped non-existent file: ${file}`);
+                            }
+                        } catch (err) {
+                            console.log(`⚠️ Failed to cache optional file: ${file}`, err.message);
+                        }
+                    })
                 );
             })
         ]).then(() => {
             console.log('✅ Service Worker: Installation complete');
             // Skip waiting to activate immediately
             return self.skipWaiting();
+        }).catch(error => {
+            console.error('❌ Service Worker: Installation failed', error);
+            throw error;
         })
     );
 });
@@ -388,7 +407,7 @@ self.addEventListener('push', event => {
         title: data.title || 'Audio-Photo Journal',
         body: data.body || 'You have a new notification',
         icon: '/icons/icon-192.png',
-        badge: '/icons/badge.png',
+        badge: '/icons/icon-192.png',
         tag: data.tag || 'journal-notification',
         data: data,
         actions: [
