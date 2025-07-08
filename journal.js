@@ -2,29 +2,62 @@
 class JournalManager {
     constructor() {
         this.entries = [];
-        this.currentEntry = null;
-        this.isEditing = false;
-        this.autoSaveTimer = null;
         this.currentPhotos = [];
         this.currentAudio = null;
         this.lastAnalysis = null;
+        this.isEditing = false;
+        this.currentEntry = null;
+        this.lastAnalysis = null;
         this.isAIProcessing = false;
         this.aiServicesReady = false; // New property to track AI services readiness
+        this.enhancedStorageReady = false; // Track enhanced storage readiness
         
         this.init();
     }
     
     init() {
         this.bindEvents();
-        this.loadEntries();
         this.showView('timeline');
         this.setupAIIntegration();
-        this.loadDraft();
         this.setupAutoSave();
-        this.initializeStorageMonitoring();
+        
+        // Wait for enhanced storage to be ready
+        this.waitForEnhancedStorage();
         
         // Wait for AI services to be ready
         this.waitForAIServices();
+    }
+
+    waitForEnhancedStorage() {
+        if (window.enhancedStorage) {
+            console.log('💾 Enhanced storage already available');
+            this.enhancedStorageReady = true;
+            this.loadEntriesFromEnhancedStorage();
+            this.loadDraftFromEnhancedStorage();
+            return;
+        }
+        
+        // Listen for enhanced storage ready event
+        document.addEventListener('enhancedStorageReady', () => {
+            console.log('💾 Enhanced storage now available');
+            this.enhancedStorageReady = true;
+            this.loadEntriesFromEnhancedStorage();
+            this.loadDraftFromEnhancedStorage();
+        });
+        
+        // Fallback timeout
+        setTimeout(() => {
+            if (!this.enhancedStorageReady && window.enhancedStorage) {
+                console.log('💾 Enhanced storage found after timeout');
+                this.enhancedStorageReady = true;
+                this.loadEntriesFromEnhancedStorage();
+                this.loadDraftFromEnhancedStorage();
+            } else if (!this.enhancedStorageReady) {
+                console.warn('⚠️ Enhanced storage not available, falling back to localStorage');
+                this.loadEntries(); // Fallback to old method
+                this.loadDraft(); // Fallback to old method
+            }
+        }, 5000);
     }
 
     waitForAIServices() {
@@ -685,17 +718,77 @@ class JournalManager {
 
     // ===== Auto-Save Integration =====
     triggerAutoSave() {
-        if (this.autoSaveTimer) {
-            clearTimeout(this.autoSaveTimer);
+        if (this.enhancedStorageReady) {
+            this.autoSaveToEnhancedStorage();
+        } else {
+            this.autoSaveToLocalStorage();
         }
-        
-        this.autoSaveTimer = setTimeout(() => {
-            this.autoSave();
-        }, 2000);
     }
     
     // Enhanced Auto-Save =====
     async autoSave() {
+        if (this.enhancedStorageReady) {
+            return this.autoSaveToEnhancedStorage();
+        } else {
+            return this.autoSaveToLocalStorage(); // Fallback
+        }
+    }
+
+    async autoSaveToEnhancedStorage() {
+        if (!window.enhancedStorage) {
+            return this.autoSave(); // Fallback to localStorage
+        }
+        
+        try {
+            const entryData = this.collectEntryData();
+            
+            // Create a lightweight draft (compress photos more aggressively)
+            const draftData = {
+                title: entryData.title,
+                content: entryData.content,
+                tags: entryData.tags,
+                mood: entryData.mood,
+                photos: await this.compressPhotosForDraft(entryData.photos),
+                audio: entryData.audio ? {
+                    transcription: entryData.audio.transcription || '',
+                    hasAudio: true
+                } : null,
+                location: entryData.location,
+                lastSaved: new Date().toISOString(),
+                version: '2.0'
+            };
+            
+            await window.enhancedStorage.storeDraft(draftData);
+            this.showAutoSaveStatus('Draft saved to enhanced storage');
+            
+        } catch (error) {
+            if (error.message.includes('quota')) {
+                console.warn('Storage quota exceeded, using minimal draft');
+                
+                // Try saving without photos
+                const minimalDraft = {
+                    title: entryData.title,
+                    content: entryData.content,
+                    tags: entryData.tags,
+                    mood: entryData.mood,
+                    photos: [],
+                    photoCount: entryData.photos.length,
+                    audio: entryData.audio ? { hasAudio: true } : null,
+                    lastSaved: new Date().toISOString(),
+                    version: '2.0'
+                };
+                
+                await window.enhancedStorage.storeDraft(minimalDraft);
+                this.showAutoSaveStatus('Draft saved (text only)', false);
+            } else {
+                console.error('Auto-save to enhanced storage failed:', error);
+                this.showAutoSaveStatus('Auto-save failed', true);
+            }
+        }
+    }
+
+    async autoSaveToLocalStorage() {
+        // This is the old auto-save method as fallback
         try {
             // Update storage indicator before attempting save
             this.updateStorageIndicator();
@@ -990,13 +1083,17 @@ class JournalManager {
     
     // Storage monitoring system
     initializeStorageMonitoring() {
-        // Check storage usage every 30 seconds
-        this.storageCheckInterval = setInterval(() => {
+        // Enhanced storage monitoring
+        if (this.enhancedStorageReady) {
+            this.setupEnhancedStorageMonitoring();
+        } else {
+            // Fallback to basic monitoring
+            this.storageCheckInterval = setInterval(() => {
+                this.updateStorageIndicator();
+            }, 30000);
+            
             this.updateStorageIndicator();
-        }, 30000);
-        
-        // Initial check
-        this.updateStorageIndicator();
+        }
     }
 
     updateStorageIndicator() {
@@ -1172,35 +1269,11 @@ class JournalManager {
     }
     
     saveEntry() {
-        const entryData = this.collectEntryData();
-        
-        if (!entryData.title && !entryData.content && entryData.photos.length === 0 && !entryData.audio) {
-            alert('Please add some content to your entry.');
-            return;
-        }
-        
-        if (this.isEditing && this.currentEntry) {
-            // Update existing entry
-            const index = this.entries.findIndex(e => e.id === this.currentEntry.id);
-            if (index !== -1) {
-                this.entries[index] = { ...this.currentEntry, ...entryData, updatedAt: new Date().toISOString() };
-            }
+        if (this.enhancedStorageReady) {
+            return this.saveEntryToEnhancedStorage();
         } else {
-            // Create new entry
-            const newEntry = {
-                id: Date.now().toString(),
-                createdAt: new Date().toISOString(),
-                ...entryData
-            };
-            this.entries.unshift(newEntry);
+            return this.saveToLocalStorage(); // Fallback
         }
-        
-        this.saveToLocalStorage();
-        this.renderEntries();
-        this.showView('timeline');
-        this.resetForm();
-        
-        console.log('✅ Entry saved successfully');
     }
     
     collectEntryData() {
@@ -1553,9 +1626,13 @@ class JournalManager {
         if (photoAnalysis) photoAnalysis.classList.add('hidden');
         if (suggestedTags) suggestedTags.classList.add('hidden');
         
-        // Clear draft
+        // Clear draft from enhanced storage or localStorage
         try {
-            localStorage.removeItem('journal_draft');
+            if (this.enhancedStorageReady && window.enhancedStorage) {
+                window.enhancedStorage.clearDraft();
+            } else {
+                localStorage.removeItem('journal_draft');
+            }
         } catch (error) {
             console.warn('Failed to clear draft:', error);
         }
@@ -1597,6 +1674,280 @@ class JournalManager {
             container.classList.add('grid-view');
         } else {
             container.classList.remove('grid-view');
+        }
+    }
+
+    // ===== Enhanced Storage Integration =====
+    async saveEntryToEnhancedStorage() {
+        if (!window.enhancedStorage) {
+            console.warn('Enhanced storage not available, using localStorage fallback');
+            return this.saveToLocalStorage();
+        }
+        
+        try {
+            const entryData = this.collectEntryData();
+            
+            if (!entryData.title && !entryData.content && entryData.photos.length === 0 && !entryData.audio) {
+                alert('Please add some content to your entry.');
+                return;
+            }
+            
+            if (this.isEditing && this.currentEntry) {
+                // Update existing entry
+                entryData.id = this.currentEntry.id;
+                entryData.updatedAt = new Date().toISOString();
+            } else {
+                // Create new entry
+                entryData.id = Date.now().toString();
+                entryData.createdAt = new Date().toISOString();
+            }
+            
+            // Store in enhanced storage
+            await window.enhancedStorage.storeEntry(entryData);
+            
+            // Reload entries
+            await this.loadEntriesFromEnhancedStorage();
+            
+            this.showView('timeline');
+            this.resetForm();
+            
+            console.log('✅ Entry saved to enhanced storage successfully');
+            
+        } catch (error) {
+            console.error('❌ Failed to save entry to enhanced storage:', error);
+            
+            // Show user-friendly error
+            if (error.message.includes('quota')) {
+                alert('Storage space is full. Please free up space or try compressing your photos.');
+            } else {
+                alert('Failed to save entry. Please try again.');
+            }
+        }
+    }
+
+    // Enhanced Auto-Save =====
+    async autoSaveToEnhancedStorage() {
+        if (!window.enhancedStorage) {
+            return this.autoSave(); // Fallback to localStorage
+        }
+        
+        try {
+            const entryData = this.collectEntryData();
+            
+            // Create a lightweight draft (compress photos more aggressively)
+            const draftData = {
+                title: entryData.title,
+                content: entryData.content,
+                tags: entryData.tags,
+                mood: entryData.mood,
+                photos: await this.compressPhotosForDraft(entryData.photos),
+                audio: entryData.audio ? {
+                    transcription: entryData.audio.transcription || '',
+                    hasAudio: true
+                } : null,
+                location: entryData.location,
+                lastSaved: new Date().toISOString(),
+                version: '2.0'
+            };
+            
+            await window.enhancedStorage.storeDraft(draftData);
+            this.showAutoSaveStatus('Draft saved to enhanced storage');
+            
+        } catch (error) {
+            if (error.message.includes('quota')) {
+                console.warn('Storage quota exceeded, using minimal draft');
+                
+                // Try saving without photos
+                const minimalDraft = {
+                    title: entryData.title,
+                    content: entryData.content,
+                    tags: entryData.tags,
+                    mood: entryData.mood,
+                    photos: [],
+                    photoCount: entryData.photos.length,
+                    audio: entryData.audio ? { hasAudio: true } : null,
+                    lastSaved: new Date().toISOString(),
+                    version: '2.0'
+                };
+                
+                await window.enhancedStorage.storeDraft(minimalDraft);
+                this.showAutoSaveStatus('Draft saved (text only)', false);
+            } else {
+                console.error('Auto-save to enhanced storage failed:', error);
+                this.showAutoSaveStatus('Auto-save failed', true);
+            }
+        }
+    }
+
+    async compressPhotosForDraft(photos) {
+        const compressedPhotos = [];
+        
+        for (const photo of photos) {
+            try {
+                // More aggressive compression for drafts
+                const compressed = await this.compressImageForStorage(photo.dataUrl, 200, 0.5);
+                compressedPhotos.push({
+                    ...photo,
+                    dataUrl: compressed,
+                    draftCompressed: true
+                });
+            } catch (error) {
+                console.warn('Draft photo compression failed:', error);
+                // Skip photo if compression fails
+            }
+        }
+        
+        return compressedPhotos;
+    }
+
+    // ===== Storage Monitoring Integration =====
+    initializeStorageMonitoring() {
+        // Enhanced storage monitoring
+        if (this.enhancedStorageReady) {
+            this.setupEnhancedStorageMonitoring();
+        } else {
+            // Fallback to basic monitoring
+            this.storageCheckInterval = setInterval(() => {
+                this.updateStorageIndicator();
+            }, 30000);
+            
+            this.updateStorageIndicator();
+        }
+    }
+
+    setupEnhancedStorageMonitoring() {
+        // Listen for storage events from enhanced storage
+        document.addEventListener('storageQuotaUpdate', (event) => {
+            this.updateEnhancedStorageIndicator(event.detail);
+        });
+        
+        document.addEventListener('storageWarning', (event) => {
+            this.handleStorageWarning(event.detail);
+        });
+        
+        document.addEventListener('storageQuotaExceeded', (event) => {
+            this.handleEnhancedQuotaExceeded(event.detail);
+        });
+        
+        // Initial status update
+        this.updateEnhancedStorageStatus();
+    }
+
+    async updateEnhancedStorageStatus() {
+        if (!window.enhancedStorage) return;
+        
+        try {
+            const stats = await window.enhancedStorage.getStorageStats();
+            if (stats) {
+                this.updateEnhancedStorageIndicator(stats);
+            }
+        } catch (error) {
+            console.error('Failed to get enhanced storage stats:', error);
+        }
+    }
+
+    updateEnhancedStorageIndicator(stats) {
+        const indicator = document.getElementById('storage-indicator');
+        const storageText = document.getElementById('storage-text');
+        
+        if (!indicator || !storageText) return;
+        
+        const usedMB = (stats.usage / (1024 * 1024)).toFixed(1);
+        const totalMB = (stats.quota / (1024 * 1024)).toFixed(1);
+        
+        storageText.textContent = `Storage: ${usedMB}MB / ${totalMB}MB (${stats.entriesCount} entries)`;
+        
+        // Update indicator style
+        indicator.className = 'storage-indicator';
+        if (stats.level === 'critical') {
+            indicator.classList.add('critical');
+        } else if (stats.level === 'warning') {
+            indicator.classList.add('warning');
+        }
+        
+        // Show/hide based on usage
+        indicator.style.display = stats.usedPercent > 50 ? 'block' : 'none';
+    }
+
+    handleStorageWarning(detail) {
+        const { level, quota } = detail;
+        const usedPercent = Math.round((quota.usage / quota.quota) * 100);
+        
+        if (level === 'critical') {
+            this.showAutoSaveStatus(`Storage ${usedPercent}% full - cleanup recommended`, true);
+        } else if (level === 'warning') {
+            this.showAutoSaveStatus(`Storage ${usedPercent}% full`, false);
+        }
+    }
+
+    handleEnhancedQuotaExceeded(detail) {
+        const { mediaType, mediaId } = detail;
+        console.error(`Storage quota exceeded for ${mediaType}: ${mediaId}`);
+        
+        this.showAutoSaveStatus('Storage full - media cleanup in progress', true);
+        
+        // Show cleanup dialog
+        this.showEnhancedStorageCleanupDialog();
+    }
+
+    showEnhancedStorageCleanupDialog() {
+        // Enhanced storage cleanup dialog with more options
+        const dialog = document.createElement('div');
+        dialog.className = 'storage-cleanup-dialog enhanced';
+        dialog.innerHTML = `
+            <div class="dialog-overlay">
+                <div class="dialog-content">
+                    <h3>💾 Enhanced Storage Full</h3>
+                    <p>Your device storage is full. Enhanced PWA storage can automatically clean up old media files.</p>
+                    <div class="dialog-actions">
+                        <button onclick="journalManager.triggerEnhancedCleanup()" style="background: #3498db; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">🧹 Auto Cleanup</button>
+                        <button onclick="journalManager.showStorageStats()" style="background: #95a5a6; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">📊 View Stats</button>
+                        <button onclick="journalManager.closeStorageDialog()" style="background: #7f8c8d; color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer;">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        dialog.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 10000;
+        `;
+        
+        document.body.appendChild(dialog);
+    }
+
+    async triggerEnhancedCleanup() {
+        if (window.enhancedStorage) {
+            try {
+                await window.enhancedStorage.cleanupOldMedia();
+                this.showAutoSaveStatus('Storage cleanup completed');
+                this.closeStorageDialog();
+                await this.updateEnhancedStorageStatus();
+            } catch (error) {
+                console.error('Enhanced cleanup failed:', error);
+                this.showAutoSaveStatus('Cleanup failed', true);
+            }
+        }
+    }
+
+    async showStorageStats() {
+        if (window.enhancedStorage) {
+            try {
+                const stats = await window.enhancedStorage.getStorageStats();
+                alert(`Storage Statistics:
+                
+Usage: ${(stats.usage / (1024 * 1024)).toFixed(1)}MB / ${(stats.quota / (1024 * 1024)).toFixed(1)}MB
+Entries: ${stats.entriesCount}
+Media Files: ${stats.mediaCount}
+Usage Level: ${stats.level}
+Used: ${stats.usedPercent.toFixed(1)}%`);
+            } catch (error) {
+                console.error('Failed to get storage stats:', error);
+            }
         }
     }
 }

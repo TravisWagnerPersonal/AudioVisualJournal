@@ -1,656 +1,531 @@
-// ===== Service Worker for Audio-Photo Journal =====
-const CACHE_NAME = 'audio-photo-journal-v2.0.0';
-const RUNTIME_CACHE = 'runtime-cache-v2';
+// ===== Enhanced Service Worker v2.1 with PWA Storage Support =====
 
-// Core files to cache - using relative paths for better compatibility
-const CORE_FILES = [
-    './index.html',
-    './styles.css',
-    './app.js',
-    './journal.js',
-    './audio.js',
-    './camera.js',
-    './location-services.js',
-    './ai-services-improved.js',
-    './manifest.json'
-];
+const CACHE_NAME = 'audio-journal-v2.1';
+const MEDIA_CACHE_NAME = 'journal-media-v1';
+const STATIC_CACHE_NAME = 'journal-static-v1';
 
-// Optional files to cache - using relative paths
-const OPTIONAL_FILES = [
-    './icons/icon-144.png',
-    './icons/icon-192.png',
-    './icons/icon-512.png',
-    './icons/maskable-icon.png',
-    './icons/favicon-32x32.png',
-    './startup.png',
-    './photo-manager.js',
-    './settings.js',
-    './mobile.css',
-    './photo-viewer.css',
-    './test-functionality.js'
-];
-
-// Runtime caching patterns
+// Enhanced PWA Storage integration
 const CACHE_STRATEGIES = {
-    images: 'CacheFirst',
-    audio: 'CacheFirst',
-    api: 'NetworkFirst',
-    static: 'StaleWhileRevalidate'
+    CACHE_FIRST: 'cache-first',
+    NETWORK_FIRST: 'network-first',
+    STALE_WHILE_REVALIDATE: 'stale-while-revalidate'
 };
 
-// ===== Installation =====
-self.addEventListener('install', event => {
-    console.log('🔧 Service Worker: Installing...');
-    console.log('🔧 Service Worker scope:', self.registration.scope);
-    console.log('🔧 Service Worker location:', self.location.href);
+// Files to cache for offline functionality
+const STATIC_ASSETS = [
+    '/',
+    '/index.html',
+    '/styles.css',
+    '/mobile.css',
+    '/photo-viewer.css',
+    '/enhanced-storage.js',
+    '/location-services.js',
+    '/audio.js',
+    '/ai-services-improved.js',
+    '/journal.js',
+    '/app.js',
+    '/test-functionality.js',
+    '/manifest.json',
+    '/icons/icon-192.png',
+    '/icons/icon-512.png',
+    '/favicon.ico'
+];
+
+// Enhanced installation with PWA Storage setup
+self.addEventListener('install', (event) => {
+    console.log('📦 Enhanced Service Worker v2.1 installing...');
     
     event.waitUntil(
-        caches.open(CACHE_NAME).then(async cache => {
-            console.log('📦 Service Worker: Caching core files:', CORE_FILES);
+        Promise.all([
+            // Cache static assets
+            caches.open(STATIC_CACHE_NAME)
+                .then((cache) => {
+                    console.log('📦 Caching static assets...');
+                    return cache.addAll(STATIC_ASSETS.map(url => new Request(url, {cache: 'reload'})));
+                }),
             
-            // Test each file individually first (Stack Overflow debugging approach)
-            console.log('🧪 Testing file accessibility in service worker context...');
-            for (const file of CORE_FILES) {
-                try {
-                    const response = await fetch(file);
-                    console.log(`🧪 Test fetch ${file}: ${response.status} ${response.statusText}`);
-                    if (!response.ok) {
-                        console.error(`❌ File not accessible: ${file} - Status: ${response.status}`);
-                    }
-                } catch (err) {
-                    console.error(`❌ Test fetch failed for ${file}:`, err.message);
-                }
-            }
+            // Initialize media cache
+            caches.open(MEDIA_CACHE_NAME)
+                .then((cache) => {
+                    console.log('📦 Media cache initialized');
+                    return cache;
+                }),
             
-            try {
-                // Try to cache all core files at once
-                await cache.addAll(CORE_FILES);
-                console.log('✅ Service Worker: Core files cached successfully');
-            } catch (error) {
-                console.error('❌ Service Worker: Core files cache.addAll failed, trying individual files:', error.message);
-                
-                // Fallback: Cache files individually with detailed error handling (Stack Overflow approach)
-                for (const file of CORE_FILES) {
-                    try {
-                        const response = await fetch(file);
-                        if (response.ok) {
-                            await cache.put(file, response);
-                            console.log(`✅ Cached core file via put(): ${file}`);
-                        } else {
-                            console.error(`❌ File returned ${response.status}: ${file}`);
-                            throw new Error(`File returned ${response.status}: ${file}`);
-                        }
-                    } catch (err) {
-                        console.error(`❌ Failed to cache core file: ${file} - ${err.message}`);
-                        throw new Error(`Critical core file failed to cache: ${file}`);
-                    }
-                }
-            }
-            
-            // Cache optional files individually (Stack Overflow recommended approach)
-            console.log('📦 Service Worker: Caching optional files:', OPTIONAL_FILES.length, 'files');
-            for (const file of OPTIONAL_FILES) {
-                try {
-                    const response = await fetch(file);
-                    if (response.ok) {
-                        await cache.put(file, response);
-                        console.log(`✅ Cached optional file: ${file}`);
-                    } else {
-                        console.warn(`⚠️ Optional file returned ${response.status}: ${file}`);
-                    }
-                } catch (err) {
-                    console.warn(`⚠️ Failed to cache optional file: ${file} - ${err.message}`);
-                    // Continue with other files even if one fails
-                }
-            }
-            
-            console.log('✅ Service Worker: Installation complete');
-            return self.skipWaiting();
-            
-        }).catch(error => {
-            console.error('❌ Service Worker: Installation failed -', error.message);
-            throw error;
+            // Skip waiting to activate immediately
+            self.skipWaiting()
+        ])
+        .then(() => {
+            console.log('✅ Enhanced Service Worker v2.1 installed successfully');
+        })
+        .catch((error) => {
+            console.error('❌ Service Worker installation failed:', error);
         })
     );
 });
 
-// ===== Activation =====
-self.addEventListener('activate', event => {
-    console.log('🚀 Service Worker: Activating...');
+// Enhanced activation with cleanup
+self.addEventListener('activate', (event) => {
+    console.log('🚀 Enhanced Service Worker v2.1 activating...');
     
     event.waitUntil(
         Promise.all([
             // Clean up old caches
-            caches.keys().then(cacheNames => {
-                return Promise.all(
-                    cacheNames
-                        .filter(cacheName => 
-                            cacheName !== CACHE_NAME && 
-                            cacheName !== RUNTIME_CACHE
-                        )
-                        .map(cacheName => {
-                            console.log('🧹 Service Worker: Deleting old cache:', cacheName);
-                            return caches.delete(cacheName);
-                        })
-                );
-            }),
+            cleanupOldCaches(),
             
-            // Take control of all clients
-            self.clients.claim()
-        ]).then(() => {
-            console.log('✅ Service Worker: Activation complete');
+            // Claim all clients immediately
+            self.clients.claim(),
+            
+            // Initialize enhanced storage communication
+            setupStorageCommunication()
+        ])
+        .then(() => {
+            console.log('✅ Enhanced Service Worker v2.1 activated successfully');
+            
+            // Notify all clients about service worker update
+            notifyClients({
+                type: 'SW_ACTIVATED',
+                version: '2.1',
+                features: ['enhanced-storage', 'offline-support', 'background-sync']
+            });
         })
     );
 });
 
-// ===== Fetch Handler =====
-self.addEventListener('fetch', event => {
-    const url = new URL(event.request.url);
-    
-    // Skip non-GET requests and chrome-extension URLs
-    if (event.request.method !== 'GET' || url.protocol === 'chrome-extension:') {
-        return;
-    }
+// Enhanced fetch handler with PWA Storage integration
+self.addEventListener('fetch', (event) => {
+    const { request } = event;
+    const url = new URL(request.url);
     
     // Handle different types of requests
-    if (url.pathname.startsWith('/api/')) {
-        // API requests - Network first
-        event.respondWith(handleApiRequest(event.request));
-    } else if (isImageRequest(event.request)) {
-        // Images - Cache first
-        event.respondWith(handleImageRequest(event.request));
-    } else if (isAudioRequest(event.request)) {
-        // Audio files - Cache first
-        event.respondWith(handleAudioRequest(event.request));
+    if (url.pathname.includes('/api/')) {
+        // API requests - network first with offline fallback
+        event.respondWith(handleAPIRequest(request));
+    } else if (isMediaRequest(request)) {
+        // Media files - cache first with enhanced storage
+        event.respondWith(handleMediaRequest(request));
+    } else if (isStaticAsset(request)) {
+        // Static assets - cache first
+        event.respondWith(handleStaticRequest(request));
     } else {
-        // Static files - Stale while revalidate
-        event.respondWith(handleStaticRequest(event.request));
+        // Default - stale while revalidate
+        event.respondWith(handleDefaultRequest(request));
     }
 });
 
-// ===== Request Handlers =====
-async function handleApiRequest(request) {
+// Background sync for enhanced storage
+self.addEventListener('sync', (event) => {
+    console.log('🔄 Background sync triggered:', event.tag);
+    
+    if (event.tag === 'background-storage-sync') {
+        event.waitUntil(handleBackgroundSync());
+    } else if (event.tag === 'media-cleanup') {
+        event.waitUntil(handleMediaCleanup());
+    }
+});
+
+// Message handling for enhanced storage communication
+self.addEventListener('message', (event) => {
+    const { data } = event;
+    
+    switch (data.type) {
+        case 'STORAGE_QUOTA_WARNING':
+            handleStorageQuotaWarning(data.quota);
+            break;
+            
+        case 'CACHE_MEDIA':
+            handleCacheMediaRequest(data.mediaId, data.mediaData);
+            break;
+            
+        case 'CLEANUP_OLD_MEDIA':
+            handleMediaCleanup();
+            break;
+            
+        case 'GET_STORAGE_STATS':
+            handleGetStorageStats(event);
+            break;
+            
+        default:
+            console.log('📨 Unknown message type:', data.type);
+    }
+});
+
+// ===== Enhanced Request Handlers =====
+
+async function handleAPIRequest(request) {
     try {
-        console.log('🌐 Service Worker: API request:', request.url);
-        
         // Try network first
         const networkResponse = await fetch(request);
         
         // Cache successful responses
-        if (networkResponse && networkResponse.ok) {
-            try {
-                const cache = await caches.open(RUNTIME_CACHE);
-                // Clone BEFORE consumption
-                await cache.put(request, networkResponse.clone());
-                console.log('🌐 API response cached:', request.url);
-            } catch (cacheError) {
-                console.warn('⚠️ Failed to cache API response:', request.url, cacheError.message);
-            }
+        if (networkResponse.ok) {
+            const cache = await caches.open(CACHE_NAME);
+            cache.put(request, networkResponse.clone());
         }
         
         return networkResponse;
-        
     } catch (error) {
-        console.log('📡 Service Worker: Network failed, trying cache:', request.url);
+        console.warn('🌐 Network request failed, checking cache:', error);
         
         // Fallback to cache
-        try {
-            const cachedResponse = await caches.match(request);
-            if (cachedResponse) {
-                console.log('📡 Serving API from cache:', request.url);
-                return cachedResponse;
-            }
-        } catch (cacheError) {
-            console.warn('⚠️ Cache lookup failed:', cacheError.message);
+        const cachedResponse = await caches.match(request);
+        if (cachedResponse) {
+            return cachedResponse;
         }
         
         // Return offline response
-        return new Response(
-            JSON.stringify({ error: 'Offline - data not available' }),
-            {
-                status: 503,
-                statusText: 'Service Unavailable',
-                headers: { 'Content-Type': 'application/json' }
-            }
-        );
-    }
-}
-
-async function handleImageRequest(request) {
-    console.log('🖼️ Service Worker: Image request:', request.url);
-    
-    // Check cache first
-    try {
-        const cachedResponse = await caches.match(request);
-        if (cachedResponse) {
-            console.log('🖼️ Serving image from cache:', request.url);
-            return cachedResponse;
-        }
-    } catch (cacheError) {
-        console.warn('⚠️ Image cache lookup failed:', cacheError.message);
-    }
-    
-    try {
-        // Fetch from network
-        const networkResponse = await fetch(request);
-        
-        // Cache successful responses
-        if (networkResponse && networkResponse.ok) {
-            try {
-                const cache = await caches.open(RUNTIME_CACHE);
-                // Clone BEFORE consumption
-                await cache.put(request, networkResponse.clone());
-                console.log('🖼️ Image cached:', request.url);
-            } catch (cacheError) {
-                console.warn('⚠️ Failed to cache image:', request.url, cacheError.message);
-            }
-        }
-        
-        return networkResponse;
-        
-    } catch (error) {
-        console.warn('🖼️ Service Worker: Image fetch failed:', request.url, error.message);
-        
-        // Return placeholder response
-        return new Response('', {
-            status: 404,
-            statusText: 'Image not found'
+        return new Response(JSON.stringify({
+            error: 'Offline',
+            message: 'This feature requires an internet connection'
+        }), {
+            status: 503,
+            statusText: 'Service Unavailable',
+            headers: { 'Content-Type': 'application/json' }
         });
     }
 }
 
-async function handleAudioRequest(request) {
-    console.log('🎵 Service Worker: Audio request:', request.url);
+async function handleMediaRequest(request) {
+    const url = new URL(request.url);
     
-    // Check cache first
-    try {
-        const cachedResponse = await caches.match(request);
-        if (cachedResponse) {
-            console.log('🎵 Serving audio from cache:', request.url);
-            return cachedResponse;
-        }
-    } catch (cacheError) {
-        console.warn('⚠️ Audio cache lookup failed:', cacheError.message);
+    // Check media cache first
+    const mediaCache = await caches.open(MEDIA_CACHE_NAME);
+    const cachedResponse = await mediaCache.match(request);
+    
+    if (cachedResponse) {
+        console.log('📁 Serving media from cache:', url.pathname);
+        return cachedResponse;
     }
     
+    // If not cached, try to fetch and cache
     try {
-        // Fetch from network
         const networkResponse = await fetch(request);
         
-        // Cache successful responses
-        if (networkResponse && networkResponse.ok) {
-            try {
-                const cache = await caches.open(RUNTIME_CACHE);
-                // Clone BEFORE consumption
-                await cache.put(request, networkResponse.clone());
-                console.log('🎵 Audio cached:', request.url);
-            } catch (cacheError) {
-                console.warn('⚠️ Failed to cache audio:', request.url, cacheError.message);
-            }
+        if (networkResponse.ok) {
+            // Cache media files
+            await mediaCache.put(request, networkResponse.clone());
+            console.log('📁 Cached media file:', url.pathname);
         }
         
         return networkResponse;
-        
     } catch (error) {
-        console.warn('🎵 Service Worker: Audio fetch failed:', request.url, error.message);
+        console.warn('📁 Media request failed:', error);
         
-        return new Response('', {
+        // Return placeholder for missing media
+        return new Response('Media not available offline', {
             status: 404,
-            statusText: 'Audio not found'
+            statusText: 'Not Found'
         });
     }
 }
 
 async function handleStaticRequest(request) {
-    console.log('📄 Service Worker: Static request:', request.url);
+    // Cache first strategy for static assets
+    const cache = await caches.open(STATIC_CACHE_NAME);
+    const cachedResponse = await cache.match(request);
     
+    if (cachedResponse) {
+        return cachedResponse;
+    }
+    
+    // If not cached, fetch and cache
     try {
-        // Try cache first
-        const cachedResponse = await caches.match(request);
-        
-        // If we have a cached version, return it and update in background
-        if (cachedResponse) {
-            console.log('📄 Serving from cache:', request.url);
-            
-            // Update cache in background (stale-while-revalidate)
-            // BUT with proper response cloning
-            fetch(request).then(async networkResponse => {
-                if (networkResponse && networkResponse.ok) {
-                    try {
-                        // Clone IMMEDIATELY upon receiving response
-                        const responseClone = networkResponse.clone();
-                        const cache = await caches.open(CACHE_NAME);
-                        await cache.put(request, responseClone);
-                        console.log('📄 Background cache update successful:', request.url);
-                    } catch (error) {
-                        console.warn('⚠️ Background cache update failed:', request.url, error.message);
-                    }
-                }
-            }).catch(error => {
-                console.warn('⚠️ Background fetch failed:', request.url, error.message);
-            });
-            
-            return cachedResponse;
-        }
-        
-        // No cache available, fetch from network
-        console.log('📄 Fetching from network:', request.url);
         const networkResponse = await fetch(request);
         
-        if (networkResponse && networkResponse.ok) {
-            try {
-                // Clone IMMEDIATELY - this is the critical fix
-                const responseClone = networkResponse.clone();
-                const cache = await caches.open(CACHE_NAME);
-                await cache.put(request, responseClone);
-                console.log('📄 Cached new response:', request.url);
-            } catch (error) {
-                console.warn('⚠️ Failed to cache response:', request.url, error.message);
-            }
+        if (networkResponse.ok) {
+            await cache.put(request, networkResponse.clone());
         }
         
         return networkResponse;
-        
     } catch (error) {
-        console.error('📄 Service Worker: Static request failed:', request.url, error.message);
+        console.warn('📄 Static asset request failed:', error);
         
-        // Try to serve from cache as fallback
-        try {
-            const fallbackResponse = await caches.match(request);
-            if (fallbackResponse) {
-                console.log('📄 Serving fallback from cache:', request.url);
-                return fallbackResponse;
-            }
-        } catch (cacheError) {
-            console.warn('⚠️ Cache fallback failed:', cacheError.message);
+        // Return basic offline page for HTML requests
+        if (request.destination === 'document') {
+            return new Response(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Audio Journal - Offline</title>
+                    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                    <style>
+                        body { font-family: Arial; text-align: center; padding: 50px; }
+                        .offline { color: #666; }
+                    </style>
+                </head>
+                <body>
+                    <h1>Audio Journal</h1>
+                    <div class="offline">
+                        <h2>You're offline</h2>
+                        <p>This page isn't available offline. Please check your connection and try again.</p>
+                    </div>
+                </body>
+                </html>
+            `, {
+                headers: { 'Content-Type': 'text/html' }
+            });
         }
         
-        // Last resort: return offline page
-        return await getOfflinePage();
-    }
-}
-
-// ===== Background Sync =====
-self.addEventListener('sync', event => {
-    console.log('🔄 Service Worker: Background sync triggered:', event.tag);
-    
-    if (event.tag === 'journal-sync') {
-        event.waitUntil(syncJournalData());
-    } else if (event.tag === 'media-upload') {
-        event.waitUntil(uploadPendingMedia());
-    }
-});
-
-async function syncJournalData() {
-    try {
-        console.log('📔 Service Worker: Syncing journal data...');
-        
-        // Get pending sync data from IndexedDB
-        const pendingData = await getPendingSyncData();
-        
-        if (pendingData.length === 0) {
-            console.log('📔 Service Worker: No pending sync data');
-            return;
-        }
-        
-        // Sync each pending item
-        for (const item of pendingData) {
-            try {
-                await syncDataItem(item);
-                await markAsSynced(item.id);
-            } catch (error) {
-                console.error('Failed to sync item:', item.id, error);
-            }
-        }
-        
-        console.log('✅ Service Worker: Journal sync complete');
-        
-    } catch (error) {
-        console.error('Service Worker: Journal sync failed:', error);
-        throw error; // Re-throw to retry later
-    }
-}
-
-async function uploadPendingMedia() {
-    try {
-        console.log('📎 Service Worker: Uploading pending media...');
-        
-        // Implementation would depend on your backend
-        // This is a placeholder for media upload logic
-        
-        console.log('✅ Service Worker: Media upload complete');
-        
-    } catch (error) {
-        console.error('Service Worker: Media upload failed:', error);
         throw error;
     }
 }
 
-// ===== Message Handling =====
-self.addEventListener('message', event => {
-    console.log('💬 Service Worker: Message received:', event.data);
+async function handleDefaultRequest(request) {
+    // Stale while revalidate strategy
+    const cache = await caches.open(CACHE_NAME);
+    const cachedResponse = await cache.match(request);
     
-    if (event.data && event.data.type) {
-        switch (event.data.type) {
-            case 'SKIP_WAITING':
-                self.skipWaiting();
-                break;
-                
-            case 'GET_VERSION':
-                event.ports[0].postMessage({
-                    version: CACHE_NAME
-                });
-                break;
-                
-            case 'CACHE_URLS':
-                event.waitUntil(
-                    cacheUrls(event.data.urls || [])
-                );
-                break;
-                
-            case 'CLEAR_CACHE':
-                event.waitUntil(
-                    clearCache(event.data.cacheName)
-                );
-                break;
-                
-            default:
-                console.log('Unknown message type:', event.data.type);
-        }
-    }
-});
-
-// ===== Notification Handling =====
-self.addEventListener('notificationclick', event => {
-    console.log('🔔 Service Worker: Notification clicked:', event.notification.tag);
-    
-    event.notification.close();
-    
-    // Handle notification actions
-    const action = event.action;
-    const data = event.notification.data || {};
-    
-    event.waitUntil(
-        clients.matchAll({ type: 'window' }).then(clientList => {
-            // Focus existing window if available
-            for (const client of clientList) {
-                if (client.url.includes(self.location.origin) && 'focus' in client) {
-                    return client.focus();
-                }
+    // Start network request (don't await)
+    const networkResponsePromise = fetch(request)
+        .then(response => {
+            if (response.ok) {
+                cache.put(request, response.clone());
             }
-            
-            // Open new window
-            if (clients.openWindow) {
-                const url = action === 'new-entry' ? '/?action=new-entry' : '/';
-                return clients.openWindow(url);
-            }
+            return response;
         })
-    );
-});
-
-// ===== Push Notifications =====
-self.addEventListener('push', event => {
-    console.log('📮 Service Worker: Push message received');
+        .catch(error => {
+            console.warn('🌐 Network request failed:', error);
+            return null;
+        });
     
-    let data = {};
-    
-    if (event.data) {
-        try {
-            data = event.data.json();
-        } catch (error) {
-            data = { title: 'Audio-Photo Journal', body: event.data.text() };
-        }
+    // Return cached response immediately if available
+    if (cachedResponse) {
+        // Still update cache in background
+        networkResponsePromise.catch(() => {}); // Ignore errors
+        return cachedResponse;
     }
     
-    const options = {
-        title: data.title || 'Audio-Photo Journal',
-        body: data.body || 'You have a new notification',
-        icon: '/icons/icon-192.png',
-        badge: '/icons/icon-192.png',
-        tag: data.tag || 'journal-notification',
-        data: data,
-        actions: [
-            {
-                action: 'open',
-                title: 'Open App'
-            },
-            {
-                action: 'dismiss',
-                title: 'Dismiss'
-            }
-        ],
-        requireInteraction: false,
-        renotify: true
-    };
+    // If no cache, wait for network
+    const networkResponse = await networkResponsePromise;
+    if (networkResponse) {
+        return networkResponse;
+    }
     
-    event.waitUntil(
-        self.registration.showNotification(options.title, options)
-    );
-});
-
-// ===== Utility Functions =====
-function isImageRequest(request) {
-    return request.destination === 'image' || 
-           /\.(jpg|jpeg|png|gif|webp|svg|ico)$/i.test(request.url);
+    // Both cache and network failed
+    throw new Error('Resource not available');
 }
 
-function isAudioRequest(request) {
-    return request.destination === 'audio' || 
-           /\.(mp3|wav|ogg|webm|m4a)$/i.test(request.url);
-}
+// ===== Enhanced Storage Support Functions =====
 
-async function getOfflinePage() {
+async function handleBackgroundSync() {
+    console.log('🔄 Performing background storage sync...');
+    
     try {
-        const cache = await caches.open(CACHE_NAME);
-        const cachedResponse = await cache.match('/index.html');
+        // Notify clients about sync start
+        notifyClients({
+            type: 'BACKGROUND_SYNC_START'
+        });
         
-        if (cachedResponse) {
-            return cachedResponse;
-        }
+        // Perform storage optimization
+        await optimizeStorageCaches();
         
-        // Return basic offline response
-        return new Response(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <title>Offline - Audio-Photo Journal</title>
-                <style>
-                    body {
-                        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-                        text-align: center;
-                        padding: 50px 20px;
-                        background: #f2f2f7;
-                    }
-                    .offline-message {
-                        max-width: 400px;
-                        margin: 0 auto;
-                        background: white;
-                        padding: 40px 20px;
-                        border-radius: 12px;
-                        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-                    }
-                    h1 { color: #333; margin-bottom: 20px; }
-                    p { color: #666; line-height: 1.5; }
-                    button {
-                        background: #007AFF;
-                        color: white;
-                        border: none;
-                        padding: 12px 24px;
-                        border-radius: 8px;
-                        font-size: 16px;
-                        cursor: pointer;
-                        margin-top: 20px;
-                    }
-                </style>
-            </head>
-            <body>
-                <div class="offline-message">
-                    <h1>📱 You're Offline</h1>
-                    <p>Don't worry! Your journal entries are safely stored on your device and will sync when you're back online.</p>
-                    <button onclick="window.location.reload()">Try Again</button>
-                </div>
-            </body>
-            </html>
-        `, {
-            headers: { 'Content-Type': 'text/html' }
+        // Clean up old media if needed
+        await handleMediaCleanup();
+        
+        console.log('✅ Background sync completed');
+        
+        // Notify clients about sync completion
+        notifyClients({
+            type: 'BACKGROUND_SYNC_COMPLETE'
         });
         
     } catch (error) {
-        console.error('Failed to get offline page:', error);
-        return new Response('Offline', { status: 200 });
+        console.error('❌ Background sync failed:', error);
+        
+        notifyClients({
+            type: 'BACKGROUND_SYNC_ERROR',
+            error: error.message
+        });
     }
 }
 
-async function cacheUrls(urls) {
+async function handleMediaCleanup() {
+    console.log('🧹 Performing media cleanup...');
+    
     try {
-        const cache = await caches.open(RUNTIME_CACHE);
-        await cache.addAll(urls);
-        console.log('✅ Service Worker: URLs cached:', urls);
-    } catch (error) {
-        console.error('Service Worker: Failed to cache URLs:', error);
-    }
-}
-
-async function clearCache(cacheName) {
-    try {
-        if (cacheName) {
-            await caches.delete(cacheName);
-        } else {
-            const cacheNames = await caches.keys();
-            await Promise.all(cacheNames.map(name => caches.delete(name)));
+        const mediaCache = await caches.open(MEDIA_CACHE_NAME);
+        const requests = await mediaCache.keys();
+        
+        if (requests.length > 100) { // Cleanup if more than 100 media files
+            // Remove oldest 20% of cached media
+            const toRemove = requests.slice(0, Math.floor(requests.length * 0.2));
+            
+            for (const request of toRemove) {
+                await mediaCache.delete(request);
+            }
+            
+            console.log(`🧹 Cleaned up ${toRemove.length} old media files`);
         }
-        console.log('🧹 Service Worker: Cache cleared');
+        
     } catch (error) {
-        console.error('Service Worker: Failed to clear cache:', error);
+        console.error('❌ Media cleanup failed:', error);
     }
 }
 
-// Placeholder functions for sync operations
-// These would need to be implemented based on your backend
-async function getPendingSyncData() {
-    // Return pending sync items from IndexedDB
-    return [];
+async function optimizeStorageCaches() {
+    try {
+        // Get storage estimate
+        if ('storage' in navigator && 'estimate' in navigator.storage) {
+            const estimate = await navigator.storage.estimate();
+            const usagePercent = (estimate.usage / estimate.quota) * 100;
+            
+            if (usagePercent > 80) {
+                console.log('⚠️ High storage usage detected, optimizing...');
+                
+                // Clean up old caches
+                await cleanupOldCaches();
+                
+                // Trigger media cleanup
+                await handleMediaCleanup();
+            }
+        }
+    } catch (error) {
+        console.error('❌ Storage optimization failed:', error);
+    }
 }
 
-async function syncDataItem(item) {
-    // Sync individual item with backend
-    console.log('Syncing item:', item);
+async function handleStorageQuotaWarning(quota) {
+    console.warn('⚠️ Storage quota warning received:', quota);
+    
+    // Schedule media cleanup
+    if ('serviceWorker' in navigator && 'sync' in window.ServiceWorkerRegistration.prototype) {
+        self.registration.sync.register('media-cleanup');
+    } else {
+        // Immediate cleanup if background sync not supported
+        await handleMediaCleanup();
+    }
 }
 
-async function markAsSynced(itemId) {
-    // Mark item as synced in IndexedDB
-    console.log('Marked as synced:', itemId);
+async function handleCacheMediaRequest(mediaId, mediaData) {
+    try {
+        const mediaCache = await caches.open(MEDIA_CACHE_NAME);
+        const response = new Response(mediaData.blob, {
+            headers: {
+                'Content-Type': mediaData.type,
+                'Content-Length': mediaData.size,
+                'X-Cached': 'true'
+            }
+        });
+        
+        await mediaCache.put(mediaId, response);
+        console.log('📁 Media cached by service worker:', mediaId);
+        
+    } catch (error) {
+        console.error('❌ Failed to cache media:', error);
+    }
 }
 
-console.log('🎯 Service Worker: Script loaded and ready');
+async function handleGetStorageStats(event) {
+    try {
+        const cacheNames = await caches.keys();
+        const cacheStats = {};
+        
+        for (const cacheName of cacheNames) {
+            const cache = await caches.open(cacheName);
+            const requests = await cache.keys();
+            cacheStats[cacheName] = requests.length;
+        }
+        
+        const stats = {
+            caches: cacheStats,
+            totalCaches: cacheNames.length,
+            serviceWorkerVersion: '2.1'
+        };
+        
+        event.ports[0].postMessage({
+            type: 'STORAGE_STATS_RESPONSE',
+            stats
+        });
+        
+    } catch (error) {
+        console.error('❌ Failed to get storage stats:', error);
+        event.ports[0].postMessage({
+            type: 'STORAGE_STATS_ERROR',
+            error: error.message
+        });
+    }
+}
+
+// ===== Utility Functions =====
+
+function isMediaRequest(request) {
+    const url = new URL(request.url);
+    return url.pathname.includes('/media/') || 
+           url.pathname.includes('photo_') || 
+           url.pathname.includes('audio_') ||
+           request.destination === 'image' ||
+           request.destination === 'audio';
+}
+
+function isStaticAsset(request) {
+    const url = new URL(request.url);
+    return STATIC_ASSETS.some(asset => url.pathname.endsWith(asset)) ||
+           request.destination === 'script' ||
+           request.destination === 'style' ||
+           request.destination === 'document';
+}
+
+async function cleanupOldCaches() {
+    console.log('🧹 Cleaning up old caches...');
+    
+    const currentCaches = [CACHE_NAME, MEDIA_CACHE_NAME, STATIC_CACHE_NAME];
+    const cacheNames = await caches.keys();
+    
+    const deletePromises = cacheNames
+        .filter(cacheName => !currentCaches.includes(cacheName))
+        .map(cacheName => {
+            console.log('🗑️ Deleting old cache:', cacheName);
+            return caches.delete(cacheName);
+        });
+    
+    await Promise.all(deletePromises);
+    console.log('✅ Old caches cleaned up');
+}
+
+async function setupStorageCommunication() {
+    console.log('📡 Setting up enhanced storage communication...');
+    
+    // Register for background sync if supported
+    if ('sync' in self.registration) {
+        console.log('✅ Background sync supported');
+    } else {
+        console.log('⚠️ Background sync not supported');
+    }
+    
+    // Set up periodic storage optimization
+    if ('storage' in navigator && 'persist' in navigator.storage) {
+        const isPersistent = await navigator.storage.persist();
+        console.log('💾 Persistent storage:', isPersistent ? 'Enabled' : 'Disabled');
+    }
+}
+
+function notifyClients(message) {
+    self.clients.matchAll().then(clients => {
+        clients.forEach(client => {
+            client.postMessage(message);
+        });
+    });
+}
 
 // ===== Error Handling =====
-self.addEventListener('error', event => {
-    console.error('Service Worker: Error occurred:', event.error);
+
+self.addEventListener('error', (event) => {
+    console.error('🚨 Service Worker error:', event.error);
+    
+    notifyClients({
+        type: 'SW_ERROR',
+        error: event.error.message,
+        filename: event.filename,
+        lineno: event.lineno
+    });
 });
 
-self.addEventListener('unhandledrejection', event => {
-    console.error('Service Worker: Unhandled promise rejection:', event.reason);
-}); 
+self.addEventListener('unhandledrejection', (event) => {
+    console.error('🚨 Service Worker unhandled rejection:', event.reason);
+    
+    notifyClients({
+        type: 'SW_UNHANDLED_REJECTION',
+        reason: event.reason
+    });
+});
+
+console.log('🚀 Enhanced Service Worker v2.1 with PWA Storage support loaded'); 

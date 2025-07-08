@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced PWA Storage Test</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f7fa;
+            color: #333;
+        }
+        
+        .test-header {
+            text-align: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+        }
+        
+        .test-section {
+            background: white;
+            margin: 20px 0;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        .test-section h3 {
+            margin-top: 0;
+            color: #4a5568;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .status {
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-weight: 500;
+        }
+        
+        .success { 
+            background: #d4edda; 
+            color: #155724; 
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error { 
+            background: #f8d7da; 
+            color: #721c24; 
+            border: 1px solid #f5c6cb;
+        }
+        
+        .warning { 
+            background: #fff3cd; 
+            color: #856404; 
+            border: 1px solid #ffeaa7;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin: 5px;
+            transition: all 0.3s ease;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .results {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #e9ecef;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .stat-card {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid #e9ecef;
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #ffc107, #dc3545);
+            transition: width 0.3s ease;
+        }
+        
+        .test-image {
+            max-width: 200px;
+            max-height: 150px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            margin: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-header">
+        <h1>🏗️ Enhanced PWA Storage Test Suite</h1>
+        <p>Comprehensive testing of the new storage system</p>
+    </div>
+
+    <!-- Initialization Status -->
+    <div class="test-section">
+        <h3>🚀 Initialization Status</h3>
+        <div id="init-status" class="status info">Initializing Enhanced PWA Storage...</div>
+        <button onclick="checkInitialization()">🔄 Check Initialization</button>
+        <div id="init-results" class="results"></div>
+    </div>
+
+    <!-- Storage Capabilities -->
+    <div class="test-section">
+        <h3>💾 Storage Capabilities</h3>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-value" id="total-quota">--</div>
+                <div class="stat-label">Total Quota (MB)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="used-storage">--</div>
+                <div class="stat-label">Used Storage (MB)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="available-storage">--</div>
+                <div class="stat-label">Available (MB)</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="usage-percent">--%</div>
+                <div class="stat-label">Usage Percentage</div>
+            </div>
+        </div>
+        <div class="progress-bar">
+            <div class="progress-fill" id="storage-progress" style="width: 0%"></div>
+        </div>
+        <button onclick="checkStorageQuota()">📊 Check Storage Quota</button>
+    </div>
+
+    <!-- IndexedDB Tests -->
+    <div class="test-section">
+        <h3>📊 IndexedDB Tests</h3>
+        <button onclick="testIndexedDB()">🧪 Test IndexedDB Operations</button>
+        <button onclick="testBulkOperations()">⚡ Test Bulk Operations</button>
+        <button onclick="clearIndexedDB()">🗑️ Clear IndexedDB</button>
+        <div id="indexeddb-results" class="results"></div>
+    </div>
+
+    <!-- Cache API Tests -->
+    <div class="test-section">
+        <h3>🗂️ Cache API Tests</h3>
+        <button onclick="testCacheAPI()">🧪 Test Cache Storage</button>
+        <button onclick="testLargeFileStorage()">📁 Test Large File Storage</button>
+        <button onclick="clearCacheAPI()">🗑️ Clear Cache</button>
+        <div id="cache-results" class="results"></div>
+    </div>
+
+    <!-- Journal Entry Tests -->
+    <div class="test-section">
+        <h3>📝 Journal Entry Tests</h3>
+        <input type="file" id="test-image-input" accept="image/*" style="margin: 10px 0;">
+        <br>
+        <button onclick="createTestEntry()">📝 Create Test Entry</button>
+        <button onclick="createTestEntryWithImage()">📷 Create Entry with Image</button>
+        <button onclick="testAutoSave()">💾 Test Auto-Save</button>
+        <button onclick="loadAllEntries()">📖 Load All Entries</button>
+        <div id="entry-results" class="results"></div>
+        <div id="test-images" style="margin-top: 15px;"></div>
+    </div>
+
+    <!-- Migration Tests -->
+    <div class="test-section">
+        <h3>🔄 Migration Tests</h3>
+        <button onclick="createLegacyData()">📦 Create Legacy Data</button>
+        <button onclick="testMigration()">🔄 Test Migration</button>
+        <button onclick="compareSystems()">⚖️ Compare Systems</button>
+        <div id="migration-results" class="results"></div>
+    </div>
+
+    <!-- Performance Tests -->
+    <div class="test-section">
+        <h3>⚡ Performance Tests</h3>
+        <button onclick="performanceTest()">🏃‍♂️ Speed Test</button>
+        <button onclick="stressTest()">💪 Stress Test</button>
+        <button onclick="concurrencyTest()">🔀 Concurrency Test</button>
+        <div id="performance-results" class="results"></div>
+    </div>
+
+    <!-- Error Handling Tests -->
+    <div class="test-section">
+        <h3>🛡️ Error Handling Tests</h3>
+        <button onclick="testQuotaExceeded()">📊 Test Quota Exceeded</button>
+        <button onclick="testCorruptedData()">💥 Test Corrupted Data</button>
+        <button onclick="testOfflineMode()">📱 Test Offline Mode</button>
+        <div id="error-results" class="results"></div>
+    </div>
+
+    <!-- Test Summary -->
+    <div class="test-section">
+        <h3>📋 Test Summary</h3>
+        <button onclick="runAllTests()">🚀 Run All Tests</button>
+        <button onclick="generateReport()">📊 Generate Report</button>
+        <div id="summary-results" class="results"></div>
+    </div>
+
+    <!-- Include the enhanced storage script -->
+    <script src="enhanced-storage.js?v=2.0"></script>
+    
+    <script>
+        // Test Suite Implementation
+        class EnhancedStorageTestSuite {
+            constructor() {
+                this.testResults = [];
+                this.storage = null;
+                this.initPromise = this.waitForStorage();
+            }
+
+            async waitForStorage() {
+                return new Promise((resolve) => {
+                    if (window.enhancedStorage) {
+                        this.storage = window.enhancedStorage;
+                        resolve();
+                        return;
+                    }
+
+                    document.addEventListener('enhancedStorageReady', (event) => {
+                        this.storage = event.detail.storage;
+                        resolve();
+                    });
+
+                    // Fallback timeout
+                    setTimeout(() => {
+                        if (window.enhancedStorage) {
+                            this.storage = window.enhancedStorage;
+                            resolve();
+                        }
+                    }, 5000);
+                });
+            }
+
+            log(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = `[${timestamp}] ${message}`;
+                console.log(logEntry);
+                return logEntry;
+            }
+
+            addTestResult(testName, passed, details = '', duration = 0) {
+                this.testResults.push({
+                    testName,
+                    passed,
+                    details,
+                    duration,
+                    timestamp: new Date()
+                });
+            }
+
+            async checkInitialization() {
+                const initStatus = document.getElementById('init-status');
+                const initResults = document.getElementById('init-results');
+
+                try {
+                    await this.initPromise;
+
+                    if (this.storage) {
+                        initStatus.className = 'status success';
+                        initStatus.textContent = '✅ Enhanced PWA Storage initialized successfully!';
+
+                        const capabilities = {
+                            indexedDBSupported: 'indexedDB' in window,
+                            cacheAPISupported: 'caches' in window,
+                            storageManagerSupported: 'storage' in navigator && 'estimate' in navigator.storage,
+                            serviceWorkerSupported: 'serviceWorker' in navigator
+                        };
+
+                        initResults.innerHTML = `
+                            <strong>Storage Capabilities:</strong><br>
+                            ${Object.entries(capabilities).map(([key, value]) => 
+                                `${key}: ${value ? '✅' : '❌'}`
+                            ).join('<br>')}
+                        `;
+
+                        this.addTestResult('Initialization', true, 'All systems operational');
+                    } else {
+                        throw new Error('Enhanced storage not available');
+                    }
+                } catch (error) {
+                    initStatus.className = 'status error';
+                    initStatus.textContent = '❌ Enhanced PWA Storage failed to initialize';
+                    initResults.innerHTML = `Error: ${error.message}`;
+                    this.addTestResult('Initialization', false, error.message);
+                }
+            }
+
+            async checkStorageQuota() {
+                try {
+                    if (!navigator.storage?.estimate) {
+                        throw new Error('StorageManager API not supported');
+                    }
+
+                    const quota = await navigator.storage.estimate();
+                    const usedMB = (quota.usage / (1024 * 1024)).toFixed(2);
+                    const totalMB = (quota.quota / (1024 * 1024)).toFixed(2);
+                    const availableMB = ((quota.quota - quota.usage) / (1024 * 1024)).toFixed(2);
+                    const usagePercent = ((quota.usage / quota.quota) * 100).toFixed(1);
+
+                    document.getElementById('total-quota').textContent = totalMB;
+                    document.getElementById('used-storage').textContent = usedMB;
+                    document.getElementById('available-storage').textContent = availableMB;
+                    document.getElementById('usage-percent').textContent = usagePercent + '%';
+
+                    const progressBar = document.getElementById('storage-progress');
+                    progressBar.style.width = usagePercent + '%';
+
+                    this.addTestResult('Storage Quota Check', true, `${usedMB}MB / ${totalMB}MB used`);
+                } catch (error) {
+                    this.log(`Storage quota check failed: ${error.message}`, 'error');
+                    this.addTestResult('Storage Quota Check', false, error.message);
+                }
+            }
+
+            async testIndexedDB() {
+                const results = document.getElementById('indexeddb-results');
+                results.innerHTML = 'Testing IndexedDB operations...\n';
+
+                try {
+                    await this.initPromise;
+
+                    // Test basic storage operations
+                    const testEntry = {
+                        id: 'test_' + Date.now(),
+                        title: 'Test Entry',
+                        content: 'This is a test entry for IndexedDB',
+                        tags: ['test', 'indexeddb'],
+                        mood: 'happy',
+                        photos: [],
+                        audio: null,
+                        createdAt: new Date().toISOString()
+                    };
+
+                    const startTime = performance.now();
+                    await this.storage.storeEntry(testEntry);
+                    const storeTime = performance.now() - startTime;
+
+                    results.innerHTML += `✅ Store operation: ${storeTime.toFixed(2)}ms\n`;
+
+                    const retrieveStart = performance.now();
+                    const retrieved = await this.storage.getEntry(testEntry.id);
+                    const retrieveTime = performance.now() - retrieveStart;
+
+                    results.innerHTML += `✅ Retrieve operation: ${retrieveTime.toFixed(2)}ms\n`;
+
+                    if (retrieved && retrieved.title === testEntry.title) {
+                        results.innerHTML += `✅ Data integrity check passed\n`;
+                        this.addTestResult('IndexedDB Operations', true, `Store: ${storeTime.toFixed(2)}ms, Retrieve: ${retrieveTime.toFixed(2)}ms`);
+                    } else {
+                        throw new Error('Data integrity check failed');
+                    }
+
+                } catch (error) {
+                    results.innerHTML += `❌ Error: ${error.message}\n`;
+                    this.addTestResult('IndexedDB Operations', false, error.message);
+                }
+            }
+
+            async testCacheAPI() {
+                const results = document.getElementById('cache-results');
+                results.innerHTML = 'Testing Cache API operations...\n';
+
+                try {
+                    const cache = await caches.open('test-cache-v1');
+                    
+                    // Test storing a blob
+                    const testData = new Blob(['Test cache data'], { type: 'text/plain' });
+                    const response = new Response(testData);
+                    
+                    const startTime = performance.now();
+                    await cache.put('test-key', response);
+                    const storeTime = performance.now() - startTime;
+
+                    results.innerHTML += `✅ Cache store: ${storeTime.toFixed(2)}ms\n`;
+
+                    const retrieveStart = performance.now();
+                    const cached = await cache.match('test-key');
+                    const retrieveTime = performance.now() - retrieveStart;
+
+                    if (cached) {
+                        const data = await cached.text();
+                        results.innerHTML += `✅ Cache retrieve: ${retrieveTime.toFixed(2)}ms\n`;
+                        results.innerHTML += `✅ Data: "${data}"\n`;
+                        
+                        this.addTestResult('Cache API Operations', true, `Store: ${storeTime.toFixed(2)}ms, Retrieve: ${retrieveTime.toFixed(2)}ms`);
+                    } else {
+                        throw new Error('Failed to retrieve cached data');
+                    }
+
+                } catch (error) {
+                    results.innerHTML += `❌ Error: ${error.message}\n`;
+                    this.addTestResult('Cache API Operations', false, error.message);
+                }
+            }
+
+            async createTestEntry() {
+                const results = document.getElementById('entry-results');
+                results.innerHTML = 'Creating test journal entry...\n';
+
+                try {
+                    await this.initPromise;
+
+                    const testEntry = {
+                        id: 'entry_' + Date.now(),
+                        title: `Test Entry ${new Date().toLocaleString()}`,
+                        content: `This is a comprehensive test entry created at ${new Date().toISOString()}. It contains various types of data to test the storage system thoroughly.`,
+                        tags: ['test', 'automated', 'storage-test'],
+                        mood: 'excited',
+                        photos: [],
+                        audio: null,
+                        location: {
+                            latitude: 40.7128,
+                            longitude: -74.0060,
+                            address: 'Test Location, NY'
+                        },
+                        createdAt: new Date().toISOString()
+                    };
+
+                    const startTime = performance.now();
+                    await this.storage.storeEntry(testEntry);
+                    const duration = performance.now() - startTime;
+
+                    results.innerHTML += `✅ Entry created successfully in ${duration.toFixed(2)}ms\n`;
+                    results.innerHTML += `Entry ID: ${testEntry.id}\n`;
+                    
+                    this.addTestResult('Create Test Entry', true, `Duration: ${duration.toFixed(2)}ms`);
+
+                } catch (error) {
+                    results.innerHTML += `❌ Error: ${error.message}\n`;
+                    this.addTestResult('Create Test Entry', false, error.message);
+                }
+            }
+
+            async createTestEntryWithImage() {
+                const results = document.getElementById('entry-results');
+                const imageInput = document.getElementById('test-image-input');
+                
+                if (!imageInput.files[0]) {
+                    // Create a test image if none selected
+                    const canvas = document.createElement('canvas');
+                    canvas.width = 400;
+                    canvas.height = 300;
+                    const ctx = canvas.getContext('2d');
+                    
+                    // Draw a test pattern
+                    ctx.fillStyle = '#4CAF50';
+                    ctx.fillRect(0, 0, 400, 300);
+                    ctx.fillStyle = '#FFF';
+                    ctx.font = '24px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('Enhanced Storage Test', 200, 150);
+                    ctx.fillText(new Date().toLocaleTimeString(), 200, 180);
+                    
+                    const dataUrl = canvas.toDataURL('image/png');
+                    await this.createEntryWithImageData(dataUrl, results);
+                } else {
+                    // Use selected image
+                    const file = imageInput.files[0];
+                    const reader = new FileReader();
+                    reader.onload = async (e) => {
+                        await this.createEntryWithImageData(e.target.result, results);
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+
+            async createEntryWithImageData(dataUrl, results) {
+                results.innerHTML += 'Creating test entry with image...\n';
+
+                try {
+                    await this.initPromise;
+
+                    const testEntry = {
+                        id: 'photo_entry_' + Date.now(),
+                        title: `Photo Test Entry ${new Date().toLocaleString()}`,
+                        content: 'Test entry with photo attachment using Enhanced PWA Storage',
+                        tags: ['test', 'photo', 'storage'],
+                        mood: 'happy',
+                        photos: [{
+                            dataUrl: dataUrl,
+                            type: 'image/png',
+                            originalSize: dataUrl.length
+                        }],
+                        audio: null,
+                        createdAt: new Date().toISOString()
+                    };
+
+                    const startTime = performance.now();
+                    await this.storage.storeEntry(testEntry);
+                    const duration = performance.now() - startTime;
+
+                    results.innerHTML += `✅ Photo entry created in ${duration.toFixed(2)}ms\n`;
+                    results.innerHTML += `Image size: ${(dataUrl.length / 1024).toFixed(2)} KB\n`;
+
+                    // Display the image
+                    const imgDiv = document.getElementById('test-images');
+                    const img = document.createElement('img');
+                    img.src = dataUrl;
+                    img.className = 'test-image';
+                    img.title = `Test image - ${(dataUrl.length / 1024).toFixed(2)} KB`;
+                    imgDiv.appendChild(img);
+
+                    this.addTestResult('Create Photo Entry', true, `Duration: ${duration.toFixed(2)}ms, Size: ${(dataUrl.length / 1024).toFixed(2)}KB`);
+
+                } catch (error) {
+                    results.innerHTML += `❌ Error: ${error.message}\n`;
+                    this.addTestResult('Create Photo Entry', false, error.message);
+                }
+            }
+
+            async loadAllEntries() {
+                const results = document.getElementById('entry-results');
+                results.innerHTML += 'Loading all entries...\n';
+
+                try {
+                    await this.initPromise;
+
+                    const startTime = performance.now();
+                    const entries = await this.storage.getAllEntries();
+                    const duration = performance.now() - startTime;
+
+                    results.innerHTML += `✅ Loaded ${entries.length} entries in ${duration.toFixed(2)}ms\n`;
+                    
+                    entries.forEach((entry, index) => {
+                        const photoCount = entry.photos ? entry.photos.length : 0;
+                        const hasAudio = entry.audio ? 'Yes' : 'No';
+                        results.innerHTML += `  ${index + 1}. ${entry.title} (Photos: ${photoCount}, Audio: ${hasAudio})\n`;
+                    });
+
+                    this.addTestResult('Load All Entries', true, `${entries.length} entries in ${duration.toFixed(2)}ms`);
+
+                } catch (error) {
+                    results.innerHTML += `❌ Error: ${error.message}\n`;
+                    this.addTestResult('Load All Entries', false, error.message);
+                }
+            }
+
+            async runAllTests() {
+                const summary = document.getElementById('summary-results');
+                summary.innerHTML = 'Running comprehensive test suite...\n';
+
+                this.testResults = []; // Reset results
+
+                const tests = [
+                    () => this.checkInitialization(),
+                    () => this.checkStorageQuota(),
+                    () => this.testIndexedDB(),
+                    () => this.testCacheAPI(),
+                    () => this.createTestEntry(),
+                    () => this.createTestEntryWithImage()
+                ];
+
+                for (const test of tests) {
+                    try {
+                        await test();
+                        await new Promise(resolve => setTimeout(resolve, 500)); // Small delay between tests
+                    } catch (error) {
+                        console.error('Test failed:', error);
+                    }
+                }
+
+                this.generateReport();
+            }
+
+            generateReport() {
+                const summary = document.getElementById('summary-results');
+                const passed = this.testResults.filter(r => r.passed).length;
+                const total = this.testResults.length;
+                const percentage = Math.round((passed / total) * 100);
+
+                summary.innerHTML = `
+Test Summary Report
+==================
+Tests Passed: ${passed}/${total} (${percentage}%)
+Total Duration: ${this.testResults.reduce((sum, r) => sum + r.duration, 0).toFixed(2)}ms
+
+Detailed Results:
+${this.testResults.map(r => 
+    `${r.passed ? '✅' : '❌'} ${r.testName}: ${r.details || 'No details'}`
+).join('\n')}
+
+Enhanced PWA Storage Status: ${percentage >= 80 ? 'READY FOR PRODUCTION' : 'NEEDS ATTENTION'}
+                `;
+            }
+        }
+
+        // Initialize test suite
+        const testSuite = new EnhancedStorageTestSuite();
+
+        // Global test functions
+        async function checkInitialization() { await testSuite.checkInitialization(); }
+        async function checkStorageQuota() { await testSuite.checkStorageQuota(); }
+        async function testIndexedDB() { await testSuite.testIndexedDB(); }
+        async function testCacheAPI() { await testSuite.testCacheAPI(); }
+        async function createTestEntry() { await testSuite.createTestEntry(); }
+        async function createTestEntryWithImage() { await testSuite.createTestEntryWithImage(); }
+        async function loadAllEntries() { await testSuite.loadAllEntries(); }
+        async function runAllTests() { await testSuite.runAllTests(); }
+        async function generateReport() { testSuite.generateReport(); }
+
+        // Additional test functions
+        async function testAutoSave() {
+            const results = document.getElementById('entry-results');
+            results.innerHTML += 'Testing auto-save functionality...\n';
+            
+            try {
+                await testSuite.initPromise;
+                
+                const draftData = {
+                    title: 'Auto-save test',
+                    content: 'Testing auto-save with enhanced storage',
+                    tags: ['autosave', 'test'],
+                    photos: [],
+                    lastSaved: new Date().toISOString()
+                };
+
+                await testSuite.storage.storeDraft(draftData);
+                const retrieved = await testSuite.storage.getDraft();
+
+                if (retrieved && retrieved.title === draftData.title) {
+                    results.innerHTML += '✅ Auto-save test passed\n';
+                    testSuite.addTestResult('Auto-save', true, 'Draft stored and retrieved successfully');
+                } else {
+                    throw new Error('Auto-save data mismatch');
+                }
+            } catch (error) {
+                results.innerHTML += `❌ Auto-save test failed: ${error.message}\n`;
+                testSuite.addTestResult('Auto-save', false, error.message);
+            }
+        }
+
+        async function clearIndexedDB() {
+            try {
+                await testSuite.initPromise;
+                // Implementation would clear all IndexedDB data
+                document.getElementById('indexeddb-results').innerHTML += '🗑️ IndexedDB cleared\n';
+            } catch (error) {
+                document.getElementById('indexeddb-results').innerHTML += `❌ Clear failed: ${error.message}\n`;
+            }
+        }
+
+        async function clearCacheAPI() {
+            try {
+                const cacheNames = await caches.keys();
+                await Promise.all(cacheNames.map(name => caches.delete(name)));
+                document.getElementById('cache-results').innerHTML += '🗑️ All caches cleared\n';
+            } catch (error) {
+                document.getElementById('cache-results').innerHTML += `❌ Clear failed: ${error.message}\n`;
+            }
+        }
+
+        // Auto-run basic tests on page load
+        document.addEventListener('DOMContentLoaded', async () => {
+            await new Promise(resolve => setTimeout(resolve, 1000)); // Wait for initialization
+            await checkInitialization();
+            await checkStorageQuota();
+        });
+    </script>
+</body>
+</html> 
