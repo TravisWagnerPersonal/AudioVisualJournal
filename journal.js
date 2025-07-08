@@ -1678,6 +1678,84 @@ class JournalManager {
     }
 
     // ===== Enhanced Storage Integration =====
+    async loadEntriesFromEnhancedStorage() {
+        if (!window.enhancedStorage) {
+            console.warn('Enhanced storage not available');
+            return this.loadEntries(); // Fallback
+        }
+        
+        try {
+            console.log('📖 Loading entries from enhanced storage...');
+            this.entries = await window.enhancedStorage.getAllEntries();
+            this.renderEntries();
+            console.log(`✅ Loaded ${this.entries.length} entries from enhanced storage`);
+        } catch (error) {
+            console.error('Failed to load entries from enhanced storage:', error);
+            // Fallback to localStorage
+            this.loadEntries();
+        }
+    }
+
+    async loadDraftFromEnhancedStorage() {
+        if (!window.enhancedStorage) {
+            return this.loadDraft(); // Fallback
+        }
+        
+        try {
+            const draft = await window.enhancedStorage.getDraft();
+            if (draft) {
+                this.restoreDraft(draft);
+                console.log('📄 Draft restored from enhanced storage');
+            }
+        } catch (error) {
+            console.error('Failed to load draft from enhanced storage:', error);
+            // Fallback to localStorage
+            this.loadDraft();
+        }
+    }
+
+    restoreDraft(draft) {
+        try {
+            // Restore form data
+            const titleInput = document.getElementById('entry-title');
+            const contentInput = document.getElementById('entry-content');
+            const tagsInput = document.getElementById('entry-tags');
+            
+            if (titleInput && draft.title) {
+                titleInput.value = draft.title;
+            }
+            
+            if (contentInput && draft.content) {
+                contentInput.value = draft.content;
+            }
+            
+            if (tagsInput && draft.tags) {
+                tagsInput.value = Array.isArray(draft.tags) ? draft.tags.join(', ') : draft.tags;
+            }
+            
+            // Restore photos
+            if (draft.photos && draft.photos.length > 0) {
+                this.currentPhotos = draft.photos;
+                this.renderPhotoPreview();
+            }
+            
+            // Restore mood
+            if (draft.mood) {
+                this.selectMood(draft.mood);
+            }
+            
+            // Restore analysis
+            if (draft.aiAnalysis) {
+                this.lastAnalysis = draft.aiAnalysis;
+                this.displayPhotoAnalysis(draft.aiAnalysis);
+            }
+            
+        } catch (error) {
+            console.error('Failed to restore draft:', error);
+        }
+    }
+
+    // ===== Enhanced Storage Integration Methods =====
     async saveEntryToEnhancedStorage() {
         if (!window.enhancedStorage) {
             console.warn('Enhanced storage not available, using localStorage fallback');

@@ -96,7 +96,14 @@ self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
     
-    // Handle different types of requests
+    // Skip non-GET requests - Cache API only supports GET requests
+    if (request.method !== 'GET') {
+        // Let POST, PUT, DELETE requests pass through without caching
+        event.respondWith(fetch(request));
+        return;
+    }
+    
+    // Handle different types of GET requests
     if (url.pathname.includes('/api/')) {
         // API requests - network first with offline fallback
         event.respondWith(handleAPIRequest(request));
@@ -277,7 +284,8 @@ async function handleDefaultRequest(request) {
     // Start network request (don't await)
     const networkResponsePromise = fetch(request)
         .then(response => {
-            if (response.ok) {
+            // Only cache successful GET responses
+            if (response.ok && request.method === 'GET') {
                 cache.put(request, response.clone());
             }
             return response;

@@ -20,11 +20,14 @@ class EnhancedPWAStorage {
         try {
             console.log('🏗️ Initializing Enhanced PWA Storage...');
             
-            // Initialize IndexedDB
+            // Initialize IndexedDB first and wait for completion
             await this.initIndexedDB();
             
             // Initialize Cache API
             await this.initCacheAPI();
+            
+            // Only proceed with other operations after DB is ready
+            await this.waitForDBReady();
             
             // Set up storage monitoring
             await this.setupStorageMonitoring();
@@ -43,6 +46,21 @@ class EnhancedPWAStorage {
             console.error('❌ Failed to initialize Enhanced PWA Storage:', error);
             throw error;
         }
+    }
+    
+    async waitForDBReady() {
+        // Wait a bit more to ensure all object stores are created
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                if (this.db && this.db.objectStoreNames.contains('entries')) {
+                    console.log('✅ IndexedDB is ready with all object stores');
+                    resolve();
+                } else {
+                    console.warn('⚠️ IndexedDB not fully ready, using fallback timing');
+                    resolve(); // Don't block, but log warning
+                }
+            }, 100);
+        });
     }
     
     // ===== IndexedDB Setup =====
@@ -184,6 +202,12 @@ class EnhancedPWAStorage {
     
     async updateStorageAnalytics(quota) {
         try {
+            // Check if database and object store are ready
+            if (!this.db || !this.db.objectStoreNames.contains('storageAnalytics')) {
+                console.log('⚠️ StorageAnalytics store not ready yet, skipping analytics update');
+                return;
+            }
+            
             const transaction = this.db.transaction(['storageAnalytics'], 'readwrite');
             const store = transaction.objectStore('storageAnalytics');
             
@@ -206,7 +230,8 @@ class EnhancedPWAStorage {
             }
             
         } catch (error) {
-            console.error('Failed to update storage analytics:', error);
+            console.warn('Failed to update storage analytics:', error.message);
+            // Don't throw - this is not critical functionality
         }
     }
     
@@ -591,6 +616,13 @@ class EnhancedPWAStorage {
     // ===== Draft Management =====
     async storeDraft(draftData) {
         try {
+            // Check if database and object store are ready
+            if (!this.db || !this.db.objectStoreNames.contains('settings')) {
+                console.log('⚠️ Settings store not ready yet, falling back to localStorage for draft');
+                localStorage.setItem('journal_draft', JSON.stringify(draftData));
+                return;
+            }
+            
             const transaction = this.db.transaction(['settings'], 'readwrite');
             const store = transaction.objectStore('settings');
             
@@ -601,13 +633,25 @@ class EnhancedPWAStorage {
             }));
             
         } catch (error) {
-            console.error('Failed to store draft:', error);
-            throw error;
+            console.warn('Failed to store draft in IndexedDB, falling back to localStorage:', error.message);
+            try {
+                localStorage.setItem('journal_draft', JSON.stringify(draftData));
+            } catch (fallbackError) {
+                console.error('Failed to store draft in localStorage too:', fallbackError);
+                throw fallbackError;
+            }
         }
     }
     
     async getDraft() {
         try {
+            // Check if database and object store are ready
+            if (!this.db || !this.db.objectStoreNames.contains('settings')) {
+                console.log('⚠️ Settings store not ready yet, falling back to localStorage for draft');
+                const saved = localStorage.getItem('journal_draft');
+                return saved ? JSON.parse(saved) : null;
+            }
+            
             const transaction = this.db.transaction(['settings'], 'readonly');
             const store = transaction.objectStore('settings');
             const result = await this.promisifyRequest(store.get('currentDraft'));
@@ -615,19 +659,37 @@ class EnhancedPWAStorage {
             return result ? result.value : null;
             
         } catch (error) {
-            console.error('Failed to get draft:', error);
-            return null;
+            console.warn('Failed to get draft from IndexedDB, falling back to localStorage:', error.message);
+            try {
+                const saved = localStorage.getItem('journal_draft');
+                return saved ? JSON.parse(saved) : null;
+            } catch (fallbackError) {
+                console.error('Failed to get draft from localStorage too:', fallbackError);
+                return null;
+            }
         }
     }
     
     async clearDraft() {
         try {
-            const transaction = this.db.transaction(['settings'], 'readwrite');
-            const store = transaction.objectStore('settings');
-            await this.promisifyRequest(store.delete('currentDraft'));
+            // Clear from IndexedDB if available
+            if (this.db && this.db.objectStoreNames.contains('settings')) {
+                const transaction = this.db.transaction(['settings'], 'readwrite');
+                const store = transaction.objectStore('settings');
+                await this.promisifyRequest(store.delete('currentDraft'));
+            }
+            
+            // Also clear from localStorage (for migration purposes)
+            localStorage.removeItem('journal_draft');
             
         } catch (error) {
-            console.error('Failed to clear draft:', error);
+            console.warn('Failed to clear draft:', error.message);
+            // Try localStorage fallback
+            try {
+                localStorage.removeItem('journal_draft');
+            } catch (fallbackError) {
+                console.error('Failed to clear draft from localStorage too:', fallbackError);
+            }
         }
     }
     
