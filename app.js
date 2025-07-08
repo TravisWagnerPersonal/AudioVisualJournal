@@ -218,35 +218,47 @@ function setupEventListeners() {
             const view = e.currentTarget.dataset.view;
             if (view && view !== 'create') {
                 navigateToView(view);
+            } else if (view === 'create') {
+                showCreateEntry();
             }
         });
     });
     
-    // Header buttons
-    document.getElementById('search-btn').addEventListener('click', toggleSearch);
-    document.getElementById('search-close').addEventListener('click', closeSearch);
-    document.getElementById('search-input').addEventListener('input', handleSearch);
+    // Header buttons (check if elements exist)
+    const searchBtn = document.getElementById('search-btn');
+    const searchClose = document.getElementById('search-close');
+    const searchInput = document.getElementById('search-input');
+    
+    if (searchBtn) searchBtn.addEventListener('click', toggleSearch);
+    if (searchClose) searchClose.addEventListener('click', closeSearch);
+    if (searchInput) searchInput.addEventListener('input', handleSearch);
     
     // View controls
-    document.querySelectorAll('.view-btn').forEach(btn => {
+    document.querySelectorAll('[data-view-mode]').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            const view = e.currentTarget.dataset.view;
+            const view = e.currentTarget.dataset.viewMode;
             toggleViewMode(view);
         });
     });
     
     // Create/Edit form
-    document.getElementById('cancel-create').addEventListener('click', () => navigateToView('timeline'));
-    document.getElementById('save-entry').addEventListener('click', handleSaveEntry);
+    const cancelBtn = document.getElementById('cancel-create');
+    const saveBtn = document.getElementById('save-entry');
+    
+    if (cancelBtn) cancelBtn.addEventListener('click', () => navigateToView('timeline'));
+    if (saveBtn) saveBtn.addEventListener('click', handleSaveEntry);
     
     // Detail view
-    document.getElementById('back-to-timeline').addEventListener('click', () => navigateToView('timeline'));
-    document.getElementById('edit-entry').addEventListener('click', handleEditEntry);
+    const backBtn = document.getElementById('back-to-timeline');
+    const editBtn = document.getElementById('edit-entry');
+    
+    if (backBtn) backBtn.addEventListener('click', () => navigateToView('timeline'));
+    if (editBtn) editBtn.addEventListener('click', handleEditEntry);
     
     // Mood selector
-    document.querySelectorAll('.mood-btn').forEach(btn => {
+    document.querySelectorAll('.mood-option').forEach(btn => {
         btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.mood-btn').forEach(b => b.classList.remove('selected'));
+            document.querySelectorAll('.mood-option').forEach(b => b.classList.remove('selected'));
             e.currentTarget.classList.add('selected');
         });
     });
@@ -481,13 +493,19 @@ function toggleViewMode(mode) {
 
 // ===== Form Handling =====
 function resetCreateForm() {
-    document.getElementById('entry-title').value = '';
-    document.getElementById('entry-content').value = '';
-    document.getElementById('entry-tags').value = '';
-    document.getElementById('photo-preview').innerHTML = '';
-    document.getElementById('audio-preview').innerHTML = '';
+    const titleInput = document.getElementById('entry-title');
+    const contentInput = document.getElementById('entry-content');
+    const tagsInput = document.getElementById('entry-tags');
+    const photoPreview = document.getElementById('photo-preview');
+    const audioPreview = document.getElementById('audio-preview');
     
-    document.querySelectorAll('.mood-btn').forEach(btn => {
+    if (titleInput) titleInput.value = '';
+    if (contentInput) contentInput.value = '';
+    if (tagsInput) tagsInput.value = '';
+    if (photoPreview) photoPreview.innerHTML = '';
+    if (audioPreview) audioPreview.innerHTML = '';
+    
+    document.querySelectorAll('.mood-option').forEach(btn => {
         btn.classList.remove('selected');
     });
     
@@ -495,15 +513,19 @@ function resetCreateForm() {
 }
 
 function populateCreateForm(entry) {
-    document.getElementById('entry-title').value = entry.title || '';
-    document.getElementById('entry-content').value = entry.content || '';
-    document.getElementById('entry-tags').value = entry.tags ? entry.tags.join(', ') : '';
+    const titleInput = document.getElementById('entry-title');
+    const contentInput = document.getElementById('entry-content');
+    const tagsInput = document.getElementById('entry-tags');
+    
+    if (titleInput) titleInput.value = entry.title || '';
+    if (contentInput) contentInput.value = entry.content || '';
+    if (tagsInput) tagsInput.value = entry.tags ? entry.tags.join(', ') : '';
     
     // Set mood
     if (entry.mood) {
         const moodBtn = document.querySelector(`[data-mood="${entry.mood}"]`);
         if (moodBtn) {
-            document.querySelectorAll('.mood-btn').forEach(btn => btn.classList.remove('selected'));
+            document.querySelectorAll('.mood-option').forEach(btn => btn.classList.remove('selected'));
             moodBtn.classList.add('selected');
         }
     }
@@ -513,10 +535,14 @@ function populateCreateForm(entry) {
 
 async function handleSaveEntry() {
     try {
-        const title = document.getElementById('entry-title').value.trim();
-        const content = document.getElementById('entry-content').value.trim();
-        const tagsInput = document.getElementById('entry-tags').value.trim();
-        const selectedMood = document.querySelector('.mood-btn.selected');
+        const titleInput = document.getElementById('entry-title');
+        const contentInput = document.getElementById('entry-content');
+        const tagsInput = document.getElementById('entry-tags');
+        const selectedMood = document.querySelector('.mood-option.selected');
+        
+        const title = titleInput ? titleInput.value.trim() : '';
+        const content = contentInput ? contentInput.value.trim() : '';
+        const tagsInputValue = tagsInput ? tagsInput.value.trim() : '';
         
         if (!title && !content) {
             showError('Please add a title or some content to your entry.');
@@ -528,7 +554,7 @@ async function handleSaveEntry() {
             title: title,
             content: content,
             mood: selectedMood?.dataset.mood || null,
-            tags: tagsInput ? tagsInput.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
+            tags: tagsInputValue ? tagsInputValue.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
             photoIds: [], // TODO: Implement photo handling
             audioId: null, // TODO: Implement audio handling
             dateCreated: currentEntry?.dateCreated || new Date().toISOString(),
@@ -601,4 +627,7 @@ function showSuccess(message) {
 window.showCreateEntry = showCreateEntry;
 window.showEditEntry = showEditEntry;
 window.showEntryDetail = showEntryDetail;
-window.initializeApp = initializeApp; 
+window.initializeApp = initializeApp;
+
+// ===== Initialize App =====
+document.addEventListener('DOMContentLoaded', initializeApp); 
