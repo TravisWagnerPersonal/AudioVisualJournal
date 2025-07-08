@@ -915,3 +915,197 @@ body {
     0%, 50% { opacity: 1; }
     51%, 100% { opacity: 0.3; }
 }
+
+/* Storage Management Styles */
+.storage-cleanup-dialog .dialog-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.storage-cleanup-dialog .dialog-content {
+    background: white;
+    padding: 2rem;
+    border-radius: 12px;
+    max-width: 400px;
+    width: 90%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+    text-align: center;
+}
+
+.storage-cleanup-dialog h3 {
+    margin-top: 0;
+    color: #e74c3c;
+    font-size: 1.2rem;
+}
+
+.storage-cleanup-dialog p {
+    margin: 1rem 0;
+    color: #666;
+    line-height: 1.5;
+}
+
+.storage-cleanup-dialog .dialog-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1.5rem;
+}
+
+.storage-cleanup-dialog button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+}
+
+.storage-cleanup-dialog button:first-child {
+    background: #3498db;
+    color: white;
+}
+
+.storage-cleanup-dialog button:first-child:hover {
+    background: #2980b9;
+}
+
+.storage-cleanup-dialog button:last-child {
+    background: #95a5a6;
+    color: white;
+}
+
+.storage-cleanup-dialog button:last-child:hover {
+    background: #7f8c8d;
+}
+
+/* Enhanced Auto-save Status */
+#autosave-status {
+    position: fixed;
+    top: 70px;
+    right: 20px;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    z-index: 1000;
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(-10px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#autosave-status.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+#autosave-status.success {
+    background: #e8f5e8;
+    color: #27ae60;
+    border: 1px solid #a9dfb7;
+}
+
+#autosave-status.error {
+    background: #ffeaea;
+    color: #e74c3c;
+    border: 1px solid #f5b7b1;
+}
+
+#autosave-status.warning {
+    background: #fff3cd;
+    color: #f39c12;
+    border: 1px solid #ffeaa7;
+}
+
+/* Photo compression indicator */
+.photo-item {
+    position: relative;
+}
+
+.photo-item.compressed::after {
+    content: "📦";
+    position: absolute;
+    top: 5px;
+    right: 25px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    pointer-events: none;
+}
+
+/* Storage usage indicator */
+.storage-indicator {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.9);
+    padding: 8px 12px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    color: #666;
+    border: 1px solid #e0e0e0;
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+}
+
+.storage-indicator.warning {
+    background: rgba(255, 243, 205, 0.9);
+    color: #f39c12;
+    border-color: #ffeaa7;
+}
+
+.storage-indicator.critical {
+    background: rgba(255, 234, 234, 0.9);
+    color: #e74c3c;
+    border-color: #f5b7b1;
+}
+
+/* Dark mode support for storage dialog */
+@media (prefers-color-scheme: dark) {
+    .storage-cleanup-dialog .dialog-content {
+        background: #2c3e50;
+        color: #ecf0f1;
+    }
+    
+    .storage-cleanup-dialog h3 {
+        color: #e74c3c;
+    }
+    
+    .storage-cleanup-dialog p {
+        color: #bdc3c7;
+    }
+    
+    .storage-indicator {
+        background: rgba(44, 62, 80, 0.9);
+        color: #bdc3c7;
+        border-color: #34495e;
+    }
+}
+
+/* Responsive design for storage dialog */
+@media (max-width: 480px) {
+    .storage-cleanup-dialog .dialog-content {
+        padding: 1.5rem;
+        margin: 1rem;
+    }
+    
+    .storage-cleanup-dialog .dialog-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .storage-cleanup-dialog button {
+        width: 100%;
+        padding: 0.75rem;
+    }
+}

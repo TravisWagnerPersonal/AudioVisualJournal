@@ -14,11 +14,13 @@ class JournalManager {
     }
     
     init() {
-        this.loadEntries();
         this.bindEvents();
-        this.setupAutoSave();
+        this.loadEntries();
+        this.showView('timeline');
         this.setupAIIntegration();
-        console.log('📝 Journal Manager initialized');
+        this.loadDraft();
+        this.setupAutoSave();
+        this.initializeStorageMonitoring();
     }
     
     // ===== AI Integration =====
@@ -586,23 +588,241 @@ class JournalManager {
     
     async autoSave() {
         try {
+            // Update storage indicator before attempting save
+            this.updateStorageIndicator();
+            
             const entryData = this.collectEntryData();
             
-            // Save to localStorage with enhanced data
-            const savedData = {
+            // Create a lightweight version for auto-save (exclude large media)
+            const lightweightData = {
                 ...entryData,
+                photos: await this.compressPhotosForStorage(entryData.photos),
+                audio: entryData.audio ? {
+                    transcription: entryData.audio.transcription || '',
+                    hasAudio: true
+                } : null,
                 lastSaved: new Date().toISOString(),
                 version: '2.1'
             };
             
-            localStorage.setItem('journal_draft', JSON.stringify(savedData));
+            // Check storage quota before saving
+            const dataSize = this.getDataSize(lightweightData);
+            const availableSpace = this.getAvailableStorageSpace();
             
-            // Update auto-save indicator
-            this.showAutoSaveStatus('Draft saved');
+            if (dataSize > availableSpace) {
+                // Try to save without photos if too large
+                const minimalData = {
+                    ...lightweightData,
+                    photos: [], // Remove photos from draft
+                    photoCount: entryData.photos.length
+                };
+                
+                if (this.getDataSize(minimalData) <= availableSpace) {
+                    localStorage.setItem('journal_draft', JSON.stringify(minimalData));
+                    this.showAutoSaveStatus('Draft saved (text only)', false);
+                } else {
+                    // Clear old drafts and try again
+                    this.clearOldDrafts();
+                    localStorage.setItem('journal_draft', JSON.stringify(minimalData));
+                    this.showAutoSaveStatus('Draft saved (minimal)', false);
+                }
+            } else {
+                localStorage.setItem('journal_draft', JSON.stringify(lightweightData));
+                this.showAutoSaveStatus('Draft saved');
+            }
+            
+            // Update storage indicator after save
+            this.updateStorageIndicator();
             
         } catch (error) {
-            console.error('Auto-save failed:', error);
-            this.showAutoSaveStatus('Save failed', true);
+            if (error.name === 'QuotaExceededError') {
+                this.handleQuotaExceeded();
+            } else {
+                console.error('Auto-save failed:', error);
+                this.showAutoSaveStatus('Save failed', true);
+            }
+        }
+    }
+
+    // Enhanced photo compression
+    async compressPhotosForStorage(photos) {
+        const compressedPhotos = [];
+        
+        for (const photo of photos) {
+            try {
+                const compressed = await this.compressImageForStorage(photo.dataUrl);
+                compressedPhotos.push({
+                    ...photo,
+                    dataUrl: compressed || photo.dataUrl,
+                    compressed: !!compressed
+                });
+            } catch (error) {
+                console.warn('Photo compression failed:', error);
+                compressedPhotos.push(photo);
+            }
+        }
+        
+        return compressedPhotos;
+    }
+
+    // Image compression utility
+    compressImageForStorage(dataUrl, maxWidth = 800, quality = 0.8) {
+        try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            const img = new Image();
+            
+            return new Promise((resolve) => {
+                img.onload = () => {
+                    // Calculate new dimensions
+                    let { width, height } = img;
+                    if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                    }
+                    
+                    // Draw and compress
+                    canvas.width = width;
+                    canvas.height = height;
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                    resolve(compressedDataUrl);
+                };
+                img.src = dataUrl;
+            });
+        } catch (error) {
+            console.warn('Image compression failed:', error);
+            return null;
+        }
+    }
+
+    // Storage quota management
+    getDataSize(data) {
+        try {
+            return new Blob([JSON.stringify(data)]).size;
+        } catch (error) {
+            // Fallback estimation
+            return JSON.stringify(data).length * 2; // UTF-16 characters
+        }
+    }
+
+    getAvailableStorageSpace() {
+        try {
+            // Test with a small item
+            const testKey = 'storage_test_' + Date.now();
+            const testData = 'x'.repeat(1024); // 1KB test
+            
+            let available = 0;
+            let size = 1024;
+            
+            // Binary search for available space
+            while (size < 10 * 1024 * 1024) { // Max 10MB
+                try {
+                    localStorage.setItem(testKey, 'x'.repeat(size));
+                    localStorage.removeItem(testKey);
+                    available = size;
+                    size *= 2;
+                } catch (e) {
+                    break;
+                }
+            }
+            
+            return available;
+        } catch (error) {
+            return 1024 * 1024; // Default 1MB
+        }
+    }
+
+    handleQuotaExceeded() {
+        console.warn('Storage quota exceeded, cleaning up...');
+        
+        // Try to clear old drafts and entries
+        this.clearOldDrafts();
+        
+        // Show user-friendly message
+        this.showAutoSaveStatus('Storage full - drafts disabled', true);
+        
+        // Offer cleanup options
+        this.showStorageCleanupDialog();
+    }
+
+    clearOldDrafts() {
+        try {
+            // Remove old draft
+            localStorage.removeItem('journal_draft');
+            
+            // If we have many entries, consider removing the oldest ones
+            const entries = JSON.parse(localStorage.getItem('journal_entries') || '[]');
+            if (entries.length > 100) {
+                // Keep only the 50 most recent entries
+                const recentEntries = entries.slice(0, 50);
+                localStorage.setItem('journal_entries', JSON.stringify(recentEntries));
+                console.log('Cleaned up old journal entries');
+            }
+        } catch (error) {
+            console.error('Failed to clean up old drafts:', error);
+        }
+    }
+
+    showStorageCleanupDialog() {
+        const dialog = document.createElement('div');
+        dialog.className = 'storage-cleanup-dialog';
+        dialog.innerHTML = `
+            <div class="dialog-overlay">
+                <div class="dialog-content">
+                    <h3>Storage Full</h3>
+                    <p>Your device storage is full. Auto-save has been disabled to prevent errors.</p>
+                    <div class="dialog-actions">
+                        <button onclick="journalManager.cleanupStorage()">Clean Up Storage</button>
+                        <button onclick="journalManager.closeStorageDialog()">Close</button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        dialog.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 10000;
+        `;
+        
+        document.body.appendChild(dialog);
+        
+        // Auto-close after 10 seconds
+        setTimeout(() => {
+            this.closeStorageDialog();
+        }, 10000);
+    }
+
+    cleanupStorage() {
+        try {
+            // Clear all drafts
+            localStorage.removeItem('journal_draft');
+            
+            // Keep only recent entries
+            const entries = JSON.parse(localStorage.getItem('journal_entries') || '[]');
+            const recentEntries = entries.slice(0, 20);
+            localStorage.setItem('journal_entries', JSON.stringify(recentEntries));
+            
+            this.entries = recentEntries;
+            this.renderEntries();
+            
+            this.showAutoSaveStatus('Storage cleaned up');
+            this.closeStorageDialog();
+        } catch (error) {
+            console.error('Storage cleanup failed:', error);
+            this.showAutoSaveStatus('Cleanup failed', true);
+        }
+    }
+
+    closeStorageDialog() {
+        const dialog = document.querySelector('.storage-cleanup-dialog');
+        if (dialog) {
+            dialog.remove();
         }
     }
 
@@ -633,6 +853,72 @@ class JournalManager {
         setTimeout(() => {
             statusElement.style.opacity = '0';
         }, 2000);
+    }
+    
+    // Storage monitoring system
+    initializeStorageMonitoring() {
+        // Check storage usage every 30 seconds
+        setInterval(() => {
+            this.updateStorageIndicator();
+        }, 30000);
+        
+        // Initial check
+        this.updateStorageIndicator();
+    }
+
+    updateStorageIndicator() {
+        const indicator = document.getElementById('storage-indicator');
+        const storageText = document.getElementById('storage-text');
+        
+        if (!indicator || !storageText) return;
+        
+        try {
+            const used = this.getStorageUsage();
+            const available = this.getAvailableStorageSpace();
+            const total = used + available;
+            const usagePercent = (used / total) * 100;
+            
+            // Update indicator text
+            const usedMB = (used / (1024 * 1024)).toFixed(1);
+            const totalMB = (total / (1024 * 1024)).toFixed(1);
+            
+            storageText.textContent = `Storage: ${usedMB}MB / ${totalMB}MB`;
+            
+            // Update indicator style based on usage
+            indicator.className = 'storage-indicator';
+            if (usagePercent > 90) {
+                indicator.classList.add('critical');
+            } else if (usagePercent > 75) {
+                indicator.classList.add('warning');
+            }
+            
+            // Show/hide based on usage
+            if (usagePercent > 50) {
+                indicator.style.display = 'block';
+            } else {
+                indicator.style.display = 'none';
+            }
+            
+        } catch (error) {
+            console.error('Storage monitoring failed:', error);
+            storageText.textContent = 'Storage: Unknown';
+        }
+    }
+
+    getStorageUsage() {
+        let totalSize = 0;
+        
+        try {
+            for (let key in localStorage) {
+                if (localStorage.hasOwnProperty(key)) {
+                    totalSize += localStorage[key].length;
+                }
+            }
+        } catch (error) {
+            console.error('Failed to calculate storage usage:', error);
+        }
+        
+        return totalSize * 2; // UTF-16 characters
     }
     
     // ===== Event Handlers =====
@@ -932,15 +1218,36 @@ class JournalManager {
         }
     }
     
-    addPhoto(photoData) {
-        this.currentPhotos.push(photoData);
-        this.renderPhotoPreview();
-        this.triggerAutoSave();
-        
-        // Auto-analyze if enabled
-        const aiServices = window.aiServices;
-        if (aiServices && aiServices.getSettings().autoGenerateEntries) {
-            this.analyzePhotosWithAI();
+    // Enhanced photo addition with compression
+    async addPhoto(photoData) {
+        try {
+            // Compress image for storage
+            const compressedDataUrl = await this.compressImageForStorage(photoData.dataUrl);
+            
+            const optimizedPhoto = {
+                ...photoData,
+                dataUrl: compressedDataUrl || photoData.dataUrl,
+                originalSize: photoData.dataUrl.length,
+                compressedSize: compressedDataUrl ? compressedDataUrl.length : photoData.dataUrl.length
+            };
+            
+            this.currentPhotos.push(optimizedPhoto);
+            this.renderPhotoPreview();
+            
+            // Delayed auto-save to avoid quota issues
+            setTimeout(() => {
+                this.triggerAutoSave();
+            }, 500);
+            
+            // Auto-analyze if enabled
+            const aiServices = window.aiServices;
+            if (aiServices && aiServices.getSettings().autoGenerateEntries) {
+                this.analyzePhotosWithAI();
+            }
+            
+        } catch (error) {
+            console.error('Failed to add photo:', error);
+            this.showAutoSaveStatus('Photo add failed', true);
         }
     }
     
