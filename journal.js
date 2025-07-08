@@ -9,6 +9,7 @@ class JournalManager {
         this.currentAudio = null;
         this.lastAnalysis = null;
         this.isAIProcessing = false;
+        this.aiServicesReady = false; // New property to track AI services readiness
         
         this.init();
     }
@@ -21,8 +22,33 @@ class JournalManager {
         this.loadDraft();
         this.setupAutoSave();
         this.initializeStorageMonitoring();
+        
+        // Wait for AI services to be ready
+        this.waitForAIServices();
     }
-    
+
+    waitForAIServices() {
+        if (window.improvedAIServices || window.aiServices) {
+            console.log('🤖 AI services already available');
+            this.aiServicesReady = true;
+            return;
+        }
+        
+        // Listen for AI services ready event
+        document.addEventListener('aiServicesReady', () => {
+            console.log('🤖 AI services now available');
+            this.aiServicesReady = true;
+        });
+        
+        // Fallback timeout
+        setTimeout(() => {
+            if (!this.aiServicesReady && (window.improvedAIServices || window.aiServices)) {
+                console.log('🤖 AI services found after timeout');
+                this.aiServicesReady = true;
+            }
+        }, 3000);
+    }
+
     // ===== AI Integration =====
     setupAIIntegration() {
         // AI Panel Toggle
@@ -149,18 +175,24 @@ class JournalManager {
             return;
         }
         
+        // Get AI services
+        const aiServices = window.improvedAIServices || window.aiServices;
+        if (!aiServices) {
+            this.showAIMessage('AI services are not available. Please check your connection.');
+            return;
+        }
+        
         this.isAIProcessing = true;
         this.updateAIStatus('🔍 Analyzing photos...');
         
         try {
-            const aiServices = window.aiServices;
-            if (!aiServices) {
-                throw new Error('AI services not available');
-            }
-            
             // Analyze the first photo
             const photo = this.currentPhotos[0];
+            console.log('📷 Starting photo analysis for:', photo.dataUrl ? 'Valid image data' : 'No image data');
+            
             const analysis = await aiServices.analyzePhoto(photo.dataUrl);
+            
+            console.log('📷 Photo analysis result:', analysis);
             
             this.lastAnalysis = analysis;
             this.displayPhotoAnalysis(analysis);
@@ -168,8 +200,16 @@ class JournalManager {
             
             // Auto-apply insights if enabled
             const settings = aiServices.getSettings();
-            if (settings.autoTagging) {
+            if (settings && settings.autoTagging) {
                 this.applyAITagsToEntry(analysis.tags);
+            }
+            
+            // Auto-generate entry if enabled
+            if (settings && settings.autoGenerateEntries) {
+                console.log('🤖 Auto-generating journal entry...');
+                setTimeout(() => {
+                    this.generateEntryWithAI();
+                }, 1000);
             }
             
         } catch (error) {
@@ -223,17 +263,19 @@ class JournalManager {
     async generateEntryWithAI() {
         if (this.isAIProcessing) return;
         
+        // Get AI services
+        const aiServices = window.improvedAIServices || window.aiServices;
+        if (!aiServices) {
+            this.showAIMessage('AI services are not available. Please check your connection.');
+            return;
+        }
+        
         this.isAIProcessing = true;
         this.updateAIStatus('✨ Generating comprehensive journal entry...');
         
         try {
-            const aiServices = window.improvedAIServices || window.aiServices;
-            if (!aiServices) {
-                throw new Error('AI services not available');
-            }
-            
             // Get current content
-            const userInput = document.getElementById('entry-content').value;
+            const userInput = document.getElementById('entry-content')?.value || '';
             
             // Get photo analysis
             let photoAnalysis = this.lastAnalysis;
@@ -250,7 +292,7 @@ class JournalManager {
             if (window.audioRecording && window.audioRecording.hasAudio()) {
                 this.updateAIStatus('🎤 Processing audio transcription...');
                 audioData = window.audioRecording.getCurrentAudio();
-                audioTranscription = audioData.transcription;
+                audioTranscription = audioData.transcription || '';
                 this.currentAudio = audioData.blob;
             } else if (this.currentAudio) {
                 // Fallback for old audio system
@@ -278,6 +320,8 @@ class JournalManager {
                 userInput,
                 locationData
             );
+            
+            console.log('✨ Generated content:', generated);
             
             // Apply generated content
             this.applyGeneratedContent(generated);
@@ -501,15 +545,24 @@ class JournalManager {
     }
     
     applyGeneratedContent(generated) {
+        // Apply title if generated
+        if (generated.title) {
+            const titleInput = document.getElementById('entry-title');
+            if (titleInput && !titleInput.value.trim()) {
+                titleInput.value = generated.title;
+            }
+        }
+        
         // Apply content
         const contentTextarea = document.getElementById('entry-content');
         if (contentTextarea) {
-            contentTextarea.value = generated.content;
-        }
-        
-        // Apply suggested tags
-        if (generated.suggestedTags && generated.suggestedTags.length > 0) {
-            this.showSuggestedTags(generated.suggestedTags);
+            // Don't overwrite if user has already written content
+            if (!contentTextarea.value.trim()) {
+                contentTextarea.value = generated.content;
+            } else {
+                // Append to existing content
+                contentTextarea.value += '\n\n' + generated.content;
+            }
         }
         
         // Apply suggested mood
@@ -517,7 +570,12 @@ class JournalManager {
             this.selectMood(generated.suggestedMood);
         }
         
-        // Auto-save
+        // Apply suggested tags
+        if (generated.suggestedTags && generated.suggestedTags.length > 0) {
+            this.showSuggestedTags(generated.suggestedTags);
+        }
+        
+        // Trigger auto-save
         this.triggerAutoSave();
     }
     
@@ -575,6 +633,56 @@ class JournalManager {
         });
     }
     
+    // ===== Draft Management =====
+    loadDraft() {
+        try {
+            const saved = localStorage.getItem('journal_draft');
+            if (saved) {
+                const draft = JSON.parse(saved);
+                
+                // Restore form data
+                const titleInput = document.getElementById('entry-title');
+                const contentInput = document.getElementById('entry-content');
+                const tagsInput = document.getElementById('entry-tags');
+                
+                if (titleInput && draft.title) {
+                    titleInput.value = draft.title;
+                }
+                
+                if (contentInput && draft.content) {
+                    contentInput.value = draft.content;
+                }
+                
+                if (tagsInput && draft.tags) {
+                    tagsInput.value = draft.tags.join(', ');
+                }
+                
+                // Restore photos
+                if (draft.photos && draft.photos.length > 0) {
+                    this.currentPhotos = draft.photos;
+                    this.renderPhotoPreview();
+                }
+                
+                // Restore mood
+                if (draft.mood) {
+                    this.selectMood(draft.mood);
+                }
+                
+                // Restore analysis
+                if (draft.aiAnalysis) {
+                    this.lastAnalysis = draft.aiAnalysis;
+                    this.displayPhotoAnalysis(draft.aiAnalysis);
+                }
+                
+                console.log('📄 Draft restored successfully');
+            }
+        } catch (error) {
+            console.error('Failed to load draft:', error);
+            // Clean up corrupted draft
+            localStorage.removeItem('journal_draft');
+        }
+    }
+
     // ===== Auto-Save Integration =====
     triggerAutoSave() {
         if (this.autoSaveTimer) {
@@ -586,6 +694,7 @@ class JournalManager {
         }, 2000);
     }
     
+    // Enhanced Auto-Save =====
     async autoSave() {
         try {
             // Update storage indicator before attempting save
@@ -593,14 +702,18 @@ class JournalManager {
             
             const entryData = this.collectEntryData();
             
-            // Create a lightweight version for auto-save (exclude large media)
+            // Create a lightweight version for auto-save
             const lightweightData = {
-                ...entryData,
+                title: entryData.title,
+                content: entryData.content,
+                tags: entryData.tags,
+                mood: entryData.mood,
                 photos: await this.compressPhotosForStorage(entryData.photos),
                 audio: entryData.audio ? {
                     transcription: entryData.audio.transcription || '',
                     hasAudio: true
                 } : null,
+                location: entryData.location,
                 lastSaved: new Date().toISOString(),
                 version: '2.1'
             };
@@ -612,9 +725,16 @@ class JournalManager {
             if (dataSize > availableSpace) {
                 // Try to save without photos if too large
                 const minimalData = {
-                    ...lightweightData,
+                    title: entryData.title,
+                    content: entryData.content,
+                    tags: entryData.tags,
+                    mood: entryData.mood,
                     photos: [], // Remove photos from draft
-                    photoCount: entryData.photos.length
+                    photoCount: entryData.photos.length,
+                    audio: lightweightData.audio,
+                    location: entryData.location,
+                    lastSaved: new Date().toISOString(),
+                    version: '2.1'
                 };
                 
                 if (this.getDataSize(minimalData) <= availableSpace) {
@@ -623,8 +743,12 @@ class JournalManager {
                 } else {
                     // Clear old drafts and try again
                     this.clearOldDrafts();
-                    localStorage.setItem('journal_draft', JSON.stringify(minimalData));
-                    this.showAutoSaveStatus('Draft saved (minimal)', false);
+                    if (this.getDataSize(minimalData) <= this.getAvailableStorageSpace()) {
+                        localStorage.setItem('journal_draft', JSON.stringify(minimalData));
+                        this.showAutoSaveStatus('Draft saved (minimal)', false);
+                    } else {
+                        this.showAutoSaveStatus('Storage full - draft disabled', true);
+                    }
                 }
             } else {
                 localStorage.setItem('journal_draft', JSON.stringify(lightweightData));
@@ -650,14 +774,15 @@ class JournalManager {
         
         for (const photo of photos) {
             try {
-                const compressed = await this.compressImageForStorage(photo.dataUrl);
+                const compressed = await this.compressImageForStorage(photo.dataUrl, 400, 0.7);
                 compressedPhotos.push({
                     ...photo,
-                    dataUrl: compressed || photo.dataUrl,
-                    compressed: !!compressed
+                    dataUrl: compressed,
+                    compressed: true
                 });
             } catch (error) {
                 console.warn('Photo compression failed:', error);
+                // Use original if compression fails
                 compressedPhotos.push(photo);
             }
         }
@@ -665,36 +790,44 @@ class JournalManager {
         return compressedPhotos;
     }
 
-    // Image compression utility
-    compressImageForStorage(dataUrl, maxWidth = 800, quality = 0.8) {
-        try {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
-            const img = new Image();
-            
-            return new Promise((resolve) => {
+    // Fixed image compression function
+    compressImageForStorage(dataUrl, maxWidth = 400, quality = 0.7) {
+        return new Promise((resolve, reject) => {
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+                
                 img.onload = () => {
-                    // Calculate new dimensions
-                    let { width, height } = img;
-                    if (width > maxWidth) {
-                        height = (height * maxWidth) / width;
-                        width = maxWidth;
+                    try {
+                        // Calculate new dimensions
+                        let { width, height } = img;
+                        if (width > maxWidth) {
+                            height = (height * maxWidth) / width;
+                            width = maxWidth;
+                        }
+                        
+                        // Draw and compress
+                        canvas.width = width;
+                        canvas.height = height;
+                        ctx.drawImage(img, 0, 0, width, height);
+                        
+                        const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
+                        resolve(compressedDataUrl);
+                    } catch (error) {
+                        reject(error);
                     }
-                    
-                    // Draw and compress
-                    canvas.width = width;
-                    canvas.height = height;
-                    ctx.drawImage(img, 0, 0, width, height);
-                    
-                    const compressedDataUrl = canvas.toDataURL('image/jpeg', quality);
-                    resolve(compressedDataUrl);
                 };
+                
+                img.onerror = () => {
+                    reject(new Error('Image load failed'));
+                };
+                
                 img.src = dataUrl;
-            });
-        } catch (error) {
-            console.warn('Image compression failed:', error);
-            return null;
-        }
+            } catch (error) {
+                reject(error);
+            }
+        });
     }
 
     // Storage quota management
@@ -858,7 +991,7 @@ class JournalManager {
     // Storage monitoring system
     initializeStorageMonitoring() {
         // Check storage usage every 30 seconds
-        setInterval(() => {
+        this.storageCheckInterval = setInterval(() => {
             this.updateStorageIndicator();
         }, 30000);
         
@@ -901,7 +1034,9 @@ class JournalManager {
             
         } catch (error) {
             console.error('Storage monitoring failed:', error);
-            storageText.textContent = 'Storage: Unknown';
+            if (storageText) {
+                storageText.textContent = 'Storage: Unknown';
+            }
         }
     }
 
@@ -1106,15 +1241,41 @@ class JournalManager {
     
     saveToLocalStorage(entryData = null) {
         try {
-            if (entryData) {
-                // Save draft/auto-save
-                localStorage.setItem('journal_entries', JSON.stringify(this.entries));
+            // Always save all entries (parameter is not used correctly)
+            const dataToSave = JSON.stringify(this.entries);
+            const dataSize = this.getDataSize(this.entries);
+            const availableSpace = this.getAvailableStorageSpace();
+            
+            if (dataSize > availableSpace) {
+                // Try to compress images in entries before saving
+                const compressedEntries = this.entries.map(entry => ({
+                    ...entry,
+                    photos: entry.photos ? entry.photos.map(photo => ({
+                        ...photo,
+                        dataUrl: photo.compressed ? photo.dataUrl : photo.dataUrl.substring(0, 50000) // Truncate if not compressed
+                    })) : []
+                }));
+                
+                try {
+                    localStorage.setItem('journal_entries', JSON.stringify(compressedEntries));
+                    console.log('⚠️ Saved entries with compressed images due to storage constraints');
+                } catch (error) {
+                    if (error.name === 'QuotaExceededError') {
+                        this.handleQuotaExceeded();
+                        throw error;
+                    }
+                }
             } else {
-                // Save all entries
-                localStorage.setItem('journal_entries', JSON.stringify(this.entries));
+                localStorage.setItem('journal_entries', dataToSave);
             }
         } catch (error) {
-            console.error('Failed to save to localStorage:', error);
+            if (error.name === 'QuotaExceededError') {
+                console.error('Storage quota exceeded while saving entries');
+                this.handleQuotaExceeded();
+            } else {
+                console.error('Failed to save to localStorage:', error);
+            }
+            throw error;
         }
     }
     
@@ -1218,36 +1379,66 @@ class JournalManager {
         }
     }
     
-    // Enhanced photo addition with compression
+    // Enhanced photo addition with better AI integration
     async addPhoto(photoData) {
         try {
             // Compress image for storage
-            const compressedDataUrl = await this.compressImageForStorage(photoData.dataUrl);
+            const compressedDataUrl = await this.compressImageForStorage(photoData.dataUrl, 400, 0.7);
             
             const optimizedPhoto = {
                 ...photoData,
-                dataUrl: compressedDataUrl || photoData.dataUrl,
+                dataUrl: compressedDataUrl,
                 originalSize: photoData.dataUrl.length,
-                compressedSize: compressedDataUrl ? compressedDataUrl.length : photoData.dataUrl.length
+                compressedSize: compressedDataUrl.length,
+                compressed: true
             };
             
             this.currentPhotos.push(optimizedPhoto);
             this.renderPhotoPreview();
             
+            console.log('📷 Photo added successfully, triggering AI analysis...');
+            
+            // Auto-analyze if enabled
+            const aiServices = window.improvedAIServices || window.aiServices;
+            if (aiServices) {
+                const settings = aiServices.getSettings();
+                if (settings && settings.autoGenerateEntries) {
+                    console.log('🤖 Auto-generation enabled, analyzing photo...');
+                    setTimeout(() => {
+                        this.analyzePhotosWithAI();
+                    }, 1000);
+                } else {
+                    console.log('🤖 Auto-generation disabled');
+                }
+            } else {
+                console.warn('⚠️ AI services not available for auto-analysis');
+            }
+            
             // Delayed auto-save to avoid quota issues
             setTimeout(() => {
                 this.triggerAutoSave();
-            }, 500);
-            
-            // Auto-analyze if enabled
-            const aiServices = window.aiServices;
-            if (aiServices && aiServices.getSettings().autoGenerateEntries) {
-                this.analyzePhotosWithAI();
-            }
+            }, 1500);
             
         } catch (error) {
             console.error('Failed to add photo:', error);
             this.showAutoSaveStatus('Photo add failed', true);
+            
+            // Try to add without compression as fallback
+            try {
+                const fallbackPhoto = {
+                    ...photoData,
+                    originalSize: photoData.dataUrl.length,
+                    compressedSize: photoData.dataUrl.length,
+                    compressed: false
+                };
+                
+                this.currentPhotos.push(fallbackPhoto);
+                this.renderPhotoPreview();
+                this.showAutoSaveStatus('Photo added (uncompressed)', false);
+            } catch (fallbackError) {
+                console.error('Failed to add photo even without compression:', fallbackError);
+                alert('Failed to add photo. Your device may be low on storage.');
+            }
         }
     }
     
@@ -1332,27 +1523,42 @@ class JournalManager {
     }
     
     resetForm() {
-        document.getElementById('entry-title').value = '';
-        document.getElementById('entry-content').value = '';
-        document.getElementById('entry-tags').value = '';
+        // Use optional chaining and null checking for DOM elements
+        const titleInput = document.getElementById('entry-title');
+        const contentInput = document.getElementById('entry-content');
+        const tagsInput = document.getElementById('entry-tags');
+        const audioPreview = document.getElementById('audio-preview');
+        const photoAnalysis = document.getElementById('photo-analysis');
+        const suggestedTags = document.getElementById('suggested-tags');
         
+        if (titleInput) titleInput.value = '';
+        if (contentInput) contentInput.value = '';
+        if (tagsInput) tagsInput.value = '';
+        
+        // Clear mood selection
         document.querySelectorAll('.mood-btn').forEach(btn => {
             btn.classList.remove('selected');
         });
         
+        // Reset internal state
         this.currentPhotos = [];
         this.currentAudio = null;
         this.lastAnalysis = null;
         this.isEditing = false;
         this.currentEntry = null;
         
+        // Clear UI elements
         this.renderPhotoPreview();
-        document.getElementById('audio-preview').innerHTML = '';
-        document.getElementById('photo-analysis').classList.add('hidden');
-        document.getElementById('suggested-tags').classList.add('hidden');
+        if (audioPreview) audioPreview.innerHTML = '';
+        if (photoAnalysis) photoAnalysis.classList.add('hidden');
+        if (suggestedTags) suggestedTags.classList.add('hidden');
         
         // Clear draft
-        localStorage.removeItem('journal_draft');
+        try {
+            localStorage.removeItem('journal_draft');
+        } catch (error) {
+            console.warn('Failed to clear draft:', error);
+        }
     }
     
     cancelCreate() {

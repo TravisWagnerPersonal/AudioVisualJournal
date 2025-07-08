@@ -960,16 +960,46 @@ class EnhancedAIIntegration {
     }
 }
 
-// ===== Initialize Enhanced AI Services =====
-document.addEventListener('DOMContentLoaded', function() {
-    // Replace the old AI services with improved version
-    window.improvedAIServices = new ImprovedAIServices();
-    window.aiServices = window.improvedAIServices; // For compatibility
-    
-    console.log('🚀 Enhanced AI Integration ready');
-    console.log('Capabilities:', window.improvedAIServices.getCapabilities());
-});
+// ===== Initialize and Export AI Services =====
+let improvedAIServices = null;
 
-// Export for global use
-window.ImprovedAIServices = ImprovedAIServices;
-window.EnhancedAIIntegration = EnhancedAIIntegration; 
+// Initialize when DOM is ready
+function initializeAIServices() {
+    try {
+        console.log('🤖 Initializing Enhanced AI Services...');
+        
+        improvedAIServices = new ImprovedAIServices();
+        
+        // Export to global scope
+        window.improvedAIServices = improvedAIServices;
+        window.aiServices = improvedAIServices; // Backward compatibility
+        
+        console.log('✅ Enhanced AI Services initialized successfully');
+        
+        // Dispatch initialization event
+        document.dispatchEvent(new CustomEvent('aiServicesReady', {
+            detail: { services: improvedAIServices }
+        }));
+        
+        return improvedAIServices;
+        
+    } catch (error) {
+        console.error('❌ Failed to initialize AI Services:', error);
+        return null;
+    }
+}
+
+// Auto-initialize if DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeAIServices);
+} else {
+    initializeAIServices();
+}
+
+// Export for module systems
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { ImprovedAIServices, improvedAIServices };
+}
+
+// Also export class for direct instantiation
+window.ImprovedAIServices = ImprovedAIServices; 
