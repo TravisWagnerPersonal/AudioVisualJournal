@@ -5,7 +5,7 @@ class ImprovedAIServices {
         this.asticaApiKey = null;
         this.speechRecognition = null;
         this.isListening = false;
-        this.debugMode = true; // Enable for troubleshooting
+        this.debugMode = false; // Disabled by default for cleaner console
         
         this.init();
     }
@@ -40,7 +40,9 @@ class ImprovedAIServices {
         }
         
         if (!this.asticaApiKey) {
-            console.warn('⚠️ No Astica API key - using fallback analysis');
+            if (this.debugMode) {
+                console.log('ℹ️ Using basic photo analysis (no AI API key configured)');
+            }
             return this.getEnhancedFallbackAnalysis(imageData);
         }
         
