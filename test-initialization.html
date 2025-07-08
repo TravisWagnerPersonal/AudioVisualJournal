@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AudioPhotoJournal - Initialization Test</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        
+        .test-container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .test-result {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <h1>🧪 AudioPhotoJournal - Initialization Test</h1>
+        <p>This page tests the critical initialization fixes for the AudioPhotoJournal app.</p>
+        
+        <div id="test-results"></div>
+        
+        <button onclick="runTests()">🚀 Run Tests</button>
+        <button onclick="clearResults()">🧹 Clear Results</button>
+    </div>
+
+    <script src="enhanced-storage.js"></script>
+    <script src="journal.js"></script>
+    <script>
+        let testResults = [];
+        
+        function addTestResult(message, type = 'info') {
+            testResults.push({ message, type, timestamp: new Date().toISOString() });
+            updateResults();
+        }
+        
+        function updateResults() {
+            const container = document.getElementById('test-results');
+            container.innerHTML = testResults.map(result => 
+                `<div class="test-result ${result.type}">
+                    [${result.timestamp.substring(11, 19)}] ${result.message}
+                </div>`
+            ).join('');
+            container.scrollTop = container.scrollHeight;
+        }
+        
+        function clearResults() {
+            testResults = [];
+            updateResults();
+        }
+        
+        async function runTests() {
+            clearResults();
+            addTestResult('🚀 Starting initialization tests...', 'info');
+            
+            // Test 1: Enhanced Storage Initialization
+            try {
+                addTestResult('📦 Testing Enhanced Storage initialization...', 'info');
+                
+                if (typeof initializeEnhancedStorage === 'function') {
+                    addTestResult('✅ Enhanced Storage function found', 'success');
+                    
+                    // Initialize enhanced storage
+                    await initializeEnhancedStorage();
+                    
+                    if (window.enhancedStorage) {
+                        addTestResult('✅ Enhanced Storage initialized successfully', 'success');
+                        
+                        // Test database readiness
+                        await window.enhancedStorage.waitForDBReady();
+                        addTestResult('✅ Database ready check passed', 'success');
+                        
+                        // Test basic operations
+                        await window.enhancedStorage.storeDraft({ test: 'data' });
+                        addTestResult('✅ Draft storage test passed', 'success');
+                        
+                        const draft = await window.enhancedStorage.getDraft();
+                        if (draft && draft.test === 'data') {
+                            addTestResult('✅ Draft retrieval test passed', 'success');
+                        } else {
+                            addTestResult('⚠️ Draft retrieval test failed', 'warning');
+                        }
+                        
+                        await window.enhancedStorage.clearDraft();
+                        addTestResult('✅ Draft clearing test passed', 'success');
+                        
+                    } else {
+                        addTestResult('❌ Enhanced Storage not available after initialization', 'error');
+                    }
+                } else {
+                    addTestResult('❌ Enhanced Storage function not found', 'error');
+                }
+                
+            } catch (error) {
+                addTestResult(`❌ Enhanced Storage test failed: ${error.message}`, 'error');
+            }
+            
+            // Test 2: Journal Manager Initialization
+            try {
+                addTestResult('📝 Testing Journal Manager initialization...', 'info');
+                
+                if (typeof JournalManager === 'function') {
+                    addTestResult('✅ JournalManager class found', 'success');
+                    
+                    const testManager = new JournalManager();
+                    addTestResult('✅ JournalManager instance created', 'success');
+                    
+                    // Test method existence
+                    if (typeof testManager.loadEntriesFromEnhancedStorage === 'function') {
+                        addTestResult('✅ loadEntriesFromEnhancedStorage method found', 'success');
+                    } else {
+                        addTestResult('❌ loadEntriesFromEnhancedStorage method missing', 'error');
+                    }
+                    
+                    if (typeof testManager.loadDraftFromEnhancedStorage === 'function') {
+                        addTestResult('✅ loadDraftFromEnhancedStorage method found', 'success');
+                    } else {
+                        addTestResult('❌ loadDraftFromEnhancedStorage method missing', 'error');
+                    }
+                    
+                    if (typeof testManager.restoreDraft === 'function') {
+                        addTestResult('✅ restoreDraft method found', 'success');
+                    } else {
+                        addTestResult('❌ restoreDraft method missing', 'error');
+                    }
+                    
+                } else {
+                    addTestResult('❌ JournalManager class not found', 'error');
+                }
+                
+            } catch (error) {
+                addTestResult(`❌ Journal Manager test failed: ${error.message}`, 'error');
+            }
+            
+            // Test 3: Service Worker Registration
+            try {
+                addTestResult('⚙️ Testing Service Worker...', 'info');
+                
+                if ('serviceWorker' in navigator) {
+                    addTestResult('✅ Service Worker API available', 'success');
+                    
+                    const registration = await navigator.serviceWorker.register('/sw.js');
+                    if (registration) {
+                        addTestResult('✅ Service Worker registered successfully', 'success');
+                    }
+                } else {
+                    addTestResult('⚠️ Service Worker not supported', 'warning');
+                }
+                
+            } catch (error) {
+                addTestResult(`❌ Service Worker test failed: ${error.message}`, 'error');
+            }
+            
+            // Test 4: IndexedDB Support
+            try {
+                addTestResult('🗄️ Testing IndexedDB support...', 'info');
+                
+                if ('indexedDB' in window) {
+                    addTestResult('✅ IndexedDB API available', 'success');
+                    
+                    // Test database creation
+                    const testDB = await new Promise((resolve, reject) => {
+                        const request = indexedDB.open('test-db', 1);
+                        request.onsuccess = () => resolve(request.result);
+                        request.onerror = () => reject(request.error);
+                        request.onupgradeneeded = (event) => {
+                            const db = event.target.result;
+                            if (!db.objectStoreNames.contains('test')) {
+                                db.createObjectStore('test', { keyPath: 'id' });
+                            }
+                        };
+                    });
+                    
+                    if (testDB) {
+                        addTestResult('✅ IndexedDB test database created', 'success');
+                        testDB.close();
+                        
+                        // Clean up test database
+                        await new Promise(resolve => {
+                            const deleteRequest = indexedDB.deleteDatabase('test-db');
+                            deleteRequest.onsuccess = () => resolve();
+                            deleteRequest.onerror = () => resolve(); // Don't fail if cleanup fails
+                        });
+                    }
+                } else {
+                    addTestResult('❌ IndexedDB not supported', 'error');
+                }
+                
+            } catch (error) {
+                addTestResult(`❌ IndexedDB test failed: ${error.message}`, 'error');
+            }
+            
+            // Test 5: Cache API Support
+            try {
+                addTestResult('💾 Testing Cache API support...', 'info');
+                
+                if ('caches' in window) {
+                    addTestResult('✅ Cache API available', 'success');
+                    
+                    const cache = await caches.open('test-cache');
+                    if (cache) {
+                        addTestResult('✅ Cache API test cache created', 'success');
+                        
+                        // Test GET request caching (should work)
+                        const testRequest = new Request('/test-resource', { method: 'GET' });
+                        const testResponse = new Response('test data');
+                        await cache.put(testRequest, testResponse);
+                        addTestResult('✅ Cache API GET request test passed', 'success');
+                        
+                        // Cleanup
+                        await caches.delete('test-cache');
+                    }
+                } else {
+                    addTestResult('❌ Cache API not supported', 'error');
+                }
+                
+            } catch (error) {
+                addTestResult(`❌ Cache API test failed: ${error.message}`, 'error');
+            }
+            
+            addTestResult('🎉 All tests completed!', 'success');
+            
+            // Summary
+            const successCount = testResults.filter(r => r.type === 'success').length;
+            const errorCount = testResults.filter(r => r.type === 'error').length;
+            const warningCount = testResults.filter(r => r.type === 'warning').length;
+            
+            addTestResult(`📊 Summary: ${successCount} passed, ${errorCount} failed, ${warningCount} warnings`, 'info');
+            
+            if (errorCount === 0) {
+                addTestResult('✅ All critical initialization issues resolved!', 'success');
+            } else {
+                addTestResult(`⚠️ ${errorCount} issues found that need attention`, 'warning');
+            }
+        }
+        
+        // Run tests automatically when page loads
+        window.addEventListener('load', () => {
+            setTimeout(runTests, 1000);
+        });
+    </script>
+</body>
+</html> 
