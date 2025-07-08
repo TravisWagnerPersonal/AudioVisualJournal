@@ -2,10 +2,10 @@
 
 class ImprovedAIServices {
     constructor() {
-        this.asticaApiKey = null;
+        this.asticaApiKey = '446B691B-6259-4B9E-A07A-D8BA68EB741F410477F35DD4A0-6820-4BC2-815D-7691A8655963';
         this.speechRecognition = null;
         this.isListening = false;
-        this.debugMode = false; // Disabled by default for cleaner console
+        this.debugMode = true; // Enable to see AI features working
         
         this.init();
     }
@@ -14,9 +14,24 @@ class ImprovedAIServices {
         console.log('🤖 Improved AI Services initialized');
         this.setupSpeechRecognition();
         this.loadSavedSettings();
+        
+        // Show AI capabilities when enabled
+        if (this.asticaApiKey) {
+            console.log('✨ Premium AI Features Enabled:');
+            console.log('  📷 Advanced photo analysis & description');
+            console.log('  🔍 Object & face detection');
+            console.log('  📝 Text extraction from images');
+            console.log('  🏷️ Smart tagging & categorization');
+            console.log('  🎭 Mood detection');
+        }
     }
     
     loadSavedSettings() {
+        // Save the API key to localStorage if not already set
+        if (this.asticaApiKey && !localStorage.getItem('ai_astica_key')) {
+            localStorage.setItem('ai_astica_key', this.asticaApiKey);
+        }
+        
         const settings = this.getSettings();
         if (settings.asticaApiKey) {
             this.setAsticaApiKey(settings.asticaApiKey);
