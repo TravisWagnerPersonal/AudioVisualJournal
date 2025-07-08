@@ -3,11 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Clear Cache - AudioPhotoJournal</title>
+    <title>🔄 Cache Buster - AudioPhotoJournal</title>
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto;
             padding: 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -24,16 +27,35 @@
             border-radius: 15px;
             backdrop-filter: blur(10px);
             text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
         
         .icon {
             font-size: 4rem;
             margin-bottom: 20px;
+            animation: spin 2s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
         
         h1 {
             margin: 0 0 20px 0;
             font-size: 2rem;
+            background: linear-gradient(45deg, #ffd700, #ffaa00);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .problem-detected {
+            background: rgba(220, 53, 69, 0.3);
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            border-left: 5px solid #dc3545;
         }
         
         .instructions {
@@ -47,6 +69,9 @@
         .instructions h3 {
             margin-top: 0;
             color: #ffd700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .instructions ol {
@@ -55,6 +80,7 @@
         
         .instructions li {
             margin: 10px 0;
+            line-height: 1.4;
         }
         
         .btn {
@@ -68,10 +94,12 @@
             margin: 10px;
             text-decoration: none;
             display: inline-block;
+            transition: all 0.3s ease;
         }
         
         .btn:hover {
             background: #218838;
+            transform: translateY(-2px);
         }
         
         .btn-secondary {
@@ -82,19 +110,36 @@
             background: #5a6268;
         }
         
+        .btn-primary {
+            background: #007bff;
+        }
+        
+        .btn-primary:hover {
+            background: #0056b3;
+        }
+        
         .status {
             margin: 20px 0;
             padding: 15px;
             border-radius: 8px;
             background: rgba(255, 255, 255, 0.1);
+            min-height: 50px;
         }
         
         .success {
             background: rgba(40, 167, 69, 0.3);
+            border-left: 5px solid #28a745;
         }
         
         .error {
             background: rgba(220, 53, 69, 0.3);
+            border-left: 5px solid #dc3545;
+        }
+        
+        .warning {
+            background: rgba(255, 193, 7, 0.3);
+            border-left: 5px solid #ffc107;
+            color: #212529;
         }
         
         .timestamp {
@@ -102,97 +147,285 @@
             opacity: 0.8;
             margin-top: 20px;
         }
+        
+        .progress {
+            width: 100%;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 5px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        
+        .cache-detection {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            font-family: monospace;
+            font-size: 0.9rem;
+            text-align: left;
+        }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="icon">🔄</div>
-        <h1>Clear Cache & Force Refresh</h1>
-        <p>This will clear your browser cache and force reload the latest version of AudioPhotoJournal.</p>
+        <h1>Advanced Cache Buster</h1>
+        <p>Comprehensive cache clearing for AudioPhotoJournal v2.3</p>
+        
+        <div id="problem-alert" class="problem-detected" style="display: none;">
+            <h3>🚨 Cache Problem Detected!</h3>
+            <p>Your browser is still loading old files. This tool will force refresh everything.</p>
+        </div>
+        
+        <div id="cache-detection" class="cache-detection">
+            <div><strong>🔍 Cache Detection Status:</strong></div>
+            <div id="detection-results">Analyzing browser cache...</div>
+        </div>
         
         <div class="instructions">
-            <h3>📱 On iPhone/iPad:</h3>
+            <h3>📱 iPhone/iPad Safari:</h3>
             <ol>
-                <li>Tap and hold the refresh button (🔄)</li>
-                <li>Select "Request Desktop Website" then refresh again</li>
-                <li>Or: Settings → Safari → Clear History and Website Data</li>
+                <li><strong>Method 1:</strong> Hold refresh button → "Reload Without Content Blockers"</li>
+                <li><strong>Method 2:</strong> Settings → Safari → Advanced → Website Data → AudioVisualJournal → Remove</li>
+                <li><strong>Method 3:</strong> Settings → Safari → Clear History and Website Data</li>
             </ol>
             
-            <h3>💻 On Desktop:</h3>
+            <h3>💻 Desktop Browsers:</h3>
             <ol>
-                <li><strong>Chrome/Edge:</strong> Ctrl+Shift+R (Cmd+Shift+R on Mac)</li>
-                <li><strong>Firefox:</strong> Ctrl+F5 (Cmd+Shift+R on Mac)</li>
-                <li><strong>Safari:</strong> Cmd+Option+R</li>
+                <li><strong>Chrome/Edge:</strong> Ctrl+Shift+R (Windows) / Cmd+Shift+R (Mac)</li>
+                <li><strong>Firefox:</strong> Ctrl+F5 (Windows) / Cmd+Shift+R (Mac)</li>
+                <li><strong>Safari:</strong> Cmd+Option+R (Mac)</li>
+                <li><strong>Or:</strong> F12 → Network tab → Disable cache → Refresh</li>
+            </ol>
+            
+            <h3>🧹 Advanced Clearing:</h3>
+            <ol>
+                <li>Developer Tools (F12) → Application/Storage tab</li>
+                <li>Clear: Local Storage, Session Storage, IndexedDB, Cache Storage</li>
+                <li>Service Workers → Unregister</li>
             </ol>
         </div>
         
         <div id="status" class="status">
-            Ready to clear cache and reload...
+            <div id="status-text">Ready to clear cache and reload...</div>
+            <div class="progress" id="progress-container" style="display: none;">
+                <div class="progress-bar" id="progress-bar"></div>
+            </div>
         </div>
         
-        <button class="btn" onclick="clearCacheAndReload()">🚀 Clear Cache & Reload</button>
-        <a href="index.html" class="btn btn-secondary">↩️ Back to App</a>
+        <div style="margin: 20px 0;">
+            <button class="btn btn-primary" onclick="automaticCacheClear()">🚀 Automatic Clear & Reload</button>
+            <button class="btn" onclick="manualInstructions()">📖 Manual Instructions</button>
+            <a href="index.html?bust=1704702000000" class="btn btn-secondary">↩️ Try App (Cache Bust)</a>
+        </div>
         
         <div class="timestamp">
-            Cache version: 2.2.1 (Latest Fix)<br>
+            <strong>Cache Buster v2.3</strong><br>
+            Expected versions: journal.js v2.3, enhanced-storage.js v2.2<br>
             Generated: <span id="timestamp"></span>
         </div>
     </div>
 
     <script>
+        const EXPECTED_TIMESTAMP = '1704702000000';
+        const statusDiv = document.getElementById('status');
+        const statusText = document.getElementById('status-text');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const detectionResults = document.getElementById('detection-results');
+        const problemAlert = document.getElementById('problem-alert');
+        
         // Display current timestamp
         document.getElementById('timestamp').textContent = new Date().toLocaleString();
         
-        async function clearCacheAndReload() {
-            const statusDiv = document.getElementById('status');
+        // Detect cache issues immediately
+        window.addEventListener('load', () => {
+            detectCacheIssues();
             
+            // Auto-run if requested
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('auto') === 'true') {
+                setTimeout(() => {
+                    problemAlert.style.display = 'block';
+                    automaticCacheClear();
+                }, 1000);
+            }
+        });
+        
+        function detectCacheIssues() {
+            let issues = [];
+            
+            // Check if we can access expected functions
             try {
-                statusDiv.innerHTML = '🔄 Clearing browser cache...';
+                // Try to detect if old versions are cached
+                const testScript = document.createElement('script');
+                testScript.src = `journal.js?test=true&t=${Date.now()}`;
+                testScript.onload = () => {
+                    if (typeof JournalManager !== 'undefined') {
+                        const testManager = new JournalManager();
+                        if (typeof testManager.loadEntriesFromEnhancedStorage !== 'function') {
+                            issues.push('❌ Missing loadEntriesFromEnhancedStorage method');
+                        } else {
+                            issues.push('✅ loadEntriesFromEnhancedStorage method found');
+                        }
+                    } else {
+                        issues.push('⚠️ JournalManager class not loaded');
+                    }
+                    
+                    updateDetectionResults(issues);
+                };
+                testScript.onerror = () => {
+                    issues.push('❌ Failed to load journal.js');
+                    updateDetectionResults(issues);
+                };
+                
+                // Don't actually append - just test loading
+                // document.head.appendChild(testScript);
+                
+            } catch (error) {
+                issues.push(`❌ Error testing cache: ${error.message}`);
+            }
+            
+            // Check service worker cache
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.getRegistrations().then(registrations => {
+                    if (registrations.length > 0) {
+                        issues.push(`⚠️ ${registrations.length} service worker(s) registered`);
+                    } else {
+                        issues.push('✅ No service workers registered');
+                    }
+                    updateDetectionResults(issues);
+                });
+            }
+            
+            // Check cache storage
+            if ('caches' in window) {
+                caches.keys().then(cacheNames => {
+                    if (cacheNames.length > 0) {
+                        issues.push(`⚠️ ${cacheNames.length} cache(s) found: ${cacheNames.join(', ')}`);
+                    } else {
+                        issues.push('✅ No cache storage found');
+                    }
+                    updateDetectionResults(issues);
+                });
+            }
+            
+            updateDetectionResults(issues);
+        }
+        
+        function updateDetectionResults(issues) {
+            detectionResults.innerHTML = issues.map(issue => `<div>${issue}</div>`).join('');
+            
+            // Show problem alert if issues detected
+            const hasProblems = issues.some(issue => issue.includes('❌') || issue.includes('⚠️'));
+            if (hasProblems) {
+                problemAlert.style.display = 'block';
+            }
+        }
+        
+        function updateProgress(percent, message) {
+            progressContainer.style.display = 'block';
+            progressBar.style.width = percent + '%';
+            statusText.textContent = message;
+        }
+        
+        async function automaticCacheClear() {
+            try {
                 statusDiv.className = 'status';
+                updateProgress(10, '🔍 Starting comprehensive cache clear...');
+                
+                await new Promise(resolve => setTimeout(resolve, 500));
                 
                 // Clear service worker cache
+                updateProgress(25, '🔄 Clearing service workers...');
                 if ('serviceWorker' in navigator) {
                     const registrations = await navigator.serviceWorker.getRegistrations();
                     for (let registration of registrations) {
                         await registration.unregister();
                     }
-                    statusDiv.innerHTML += '<br>✅ Service worker unregistered';
                 }
+                
+                await new Promise(resolve => setTimeout(resolve, 500));
+                updateProgress(40, '💾 Clearing cache storage...');
                 
                 // Clear caches API
                 if ('caches' in window) {
                     const cacheNames = await caches.keys();
                     await Promise.all(cacheNames.map(name => caches.delete(name)));
-                    statusDiv.innerHTML += '<br>✅ Cache API cleared';
                 }
+                
+                await new Promise(resolve => setTimeout(resolve, 500));
+                updateProgress(60, '🗂️ Clearing local storage...');
                 
                 // Clear localStorage
                 localStorage.clear();
-                statusDiv.innerHTML += '<br>✅ LocalStorage cleared';
                 
                 // Clear sessionStorage
                 sessionStorage.clear();
-                statusDiv.innerHTML += '<br>✅ SessionStorage cleared';
                 
-                statusDiv.innerHTML += '<br><br>🚀 Redirecting to fresh app...';
+                await new Promise(resolve => setTimeout(resolve, 500));
+                updateProgress(80, '🧹 Clearing IndexedDB...');
+                
+                // Clear IndexedDB
+                if ('indexedDB' in window) {
+                    try {
+                        const databases = await indexedDB.databases();
+                        for (const db of databases) {
+                            indexedDB.deleteDatabase(db.name);
+                        }
+                    } catch (error) {
+                        console.warn('Could not clear IndexedDB:', error);
+                    }
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 500));
+                updateProgress(95, '✅ Cache cleared successfully!');
+                
                 statusDiv.className = 'status success';
                 
-                // Force reload with cache bust
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                updateProgress(100, '🚀 Redirecting to fresh app...');
+                
+                // Force reload with aggressive cache busting
                 setTimeout(() => {
                     const timestamp = Date.now();
-                    window.location.href = `index.html?v=2.2.1&t=${timestamp}`;
+                    window.location.href = `index.html?v=2.3&bust=${timestamp}&clear=true`;
                 }, 2000);
                 
             } catch (error) {
-                statusDiv.innerHTML = `❌ Error clearing cache: ${error.message}`;
                 statusDiv.className = 'status error';
+                statusText.textContent = `❌ Error clearing cache: ${error.message}`;
+                console.error('Cache clear error:', error);
             }
         }
         
-        // Auto-clear cache if URL parameter is set
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('auto') === 'true') {
-            setTimeout(clearCacheAndReload, 1000);
+        function manualInstructions() {
+            alert(`📖 Manual Cache Clearing Instructions:
+
+🔧 RECOMMENDED METHOD:
+1. Press F12 to open Developer Tools
+2. Right-click the refresh button
+3. Select "Empty Cache and Hard Reload"
+
+📱 MOBILE SAFARI:
+1. Hold the refresh button
+2. Select "Reload Without Content Blockers"
+
+⚡ KEYBOARD SHORTCUTS:
+• Chrome/Edge: Ctrl+Shift+R (Cmd+Shift+R on Mac)  
+• Firefox: Ctrl+F5 (Cmd+Shift+R on Mac)
+• Safari: Cmd+Option+R
+
+After clearing cache, try the app again!`);
         }
     </script>
 </body>

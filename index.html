@@ -43,17 +43,20 @@
     
     <title>Audio-Photo Journal</title>
     
-    <!-- Enhanced CSS Loading Order for iPhone Optimization -->
-    <link rel="stylesheet" href="styles.css?v=2.2">
-    <link rel="stylesheet" href="mobile.css?v=2.2">
-    <link rel="stylesheet" href="iphone-optimized.css?v=1.1">
-    <link rel="stylesheet" href="photo-viewer.css?v=2.2">
+    <!-- AGGRESSIVE CACHE BUSTING - CSS with timestamps -->
+    <link rel="stylesheet" href="styles.css?v=2.3&t=1704702000000">
+    <link rel="stylesheet" href="mobile.css?v=2.3&t=1704702000000">
+    <link rel="stylesheet" href="iphone-optimized.css?v=1.2&t=1704702000000">
+    <link rel="stylesheet" href="photo-viewer.css?v=2.3&t=1704702000000">
     
-    <!-- Preload critical resources for better performance -->
-    <link rel="preload" href="enhanced-storage.js?v=2.1" as="script">
-    <link rel="preload" href="journal.js?v=2.2" as="script">
+    <!-- Preload critical resources with cache busting -->
+    <link rel="preload" href="enhanced-storage.js?v=2.2&t=1704702000000" as="script">
+    <link rel="preload" href="journal.js?v=2.3&t=1704702000000" as="script">
     
-    <!-- Force deployment refresh - iPhone Optimized v2.1 -->
+    <!-- Force deployment refresh - Cache Busting v2.3 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
 </head>
 <body>
     
@@ -412,24 +415,28 @@
         </div>
     </div>
 
-    <!-- Scripts -->
-    <script src="debug.js"></script>
+    <!-- Scripts with AGGRESSIVE CACHE BUSTING -->
+    <script src="debug.js?t=1704702000000"></script>
     <!-- Core Services (Load First) -->
-    <script src="location-services.js?v=2.2"></script>
-    <script src="audio.js?v=2.2"></script>
-    <script src="enhanced-storage.js?v=2.1"></script>
+    <script src="location-services.js?v=2.3&t=1704702000000"></script>
+    <script src="audio.js?v=2.3&t=1704702000000"></script>
+    <script src="enhanced-storage.js?v=2.2&t=1704702000000"></script>
     
     <!-- AI Services -->
-    <script src="ai-services-improved.js?v=2.2"></script>
+    <script src="ai-services-improved.js?v=2.3&t=1704702000000"></script>
     
     <!-- Main Application -->
-    <script src="journal.js?v=2.2"></script>
-    <script src="app.js?v=2.2"></script>
-    <script src="test-functionality.js?v=2.2"></script>
+    <script src="journal.js?v=2.3&t=1704702000000"></script>
+    <script src="app.js?v=2.3&t=1704702000000"></script>
+    <script src="test-functionality.js?v=2.3&t=1704702000000"></script>
     
     <!-- Service Worker Registration -->
     <script>
-        console.log('🚀 Audio Journal Debug v2.0 - Starting...');
+        console.log('🚀 Audio Journal Debug v2.3 - Cache Busting Active...');
+        
+        // Cache busting timestamp
+        const cacheBustingTimestamp = '1704702000000';
+        console.log('📅 Cache busting timestamp:', cacheBustingTimestamp);
         
         // Debug: Check if key elements exist
         document.addEventListener('DOMContentLoaded', () => {
@@ -450,11 +457,32 @@
             
             console.log('Navigation buttons:', document.querySelectorAll('.nav-btn').length);
             console.log('App initialization should begin now...');
+            
+            // Check for cache issues
+            const userAgent = navigator.userAgent;
+            console.log('🔍 Browser:', userAgent);
+            
+            // Detect if we're still getting cached versions
+            if (typeof JournalManager !== 'undefined') {
+                const manager = new JournalManager();
+                if (typeof manager.loadEntriesFromEnhancedStorage === 'function') {
+                    console.log('✅ Cache busting successful - latest methods available');
+                } else {
+                    console.error('❌ Cache issue detected - method still missing');
+                    // Show cache clear instructions
+                    setTimeout(() => {
+                        if (confirm('⚠️ Cache Issue Detected!\n\nThe app is still loading old files. Clear your browser cache?\n\nClick OK to go to cache clearing instructions.')) {
+                            window.location.href = 'clear-cache.html?auto=true';
+                        }
+                    }, 2000);
+                }
+            }
         });
         
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js')
+                // Cache bust the service worker too
+                navigator.serviceWorker.register(`sw.js?v=2.3&t=${cacheBustingTimestamp}`)
                     .then((registration) => {
                         console.log('SW registered: ', registration);
                     })
