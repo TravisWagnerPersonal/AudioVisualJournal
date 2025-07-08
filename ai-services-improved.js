@@ -245,9 +245,19 @@ class ImprovedAIServices {
     }
     
     // ===== Enhanced Journal Entry Generation =====
-    async generateJournalEntry(photoAnalysis, audioTranscription, userInput = '') {
+    async generateJournalEntry(photoAnalysis, audioTranscription, userInput = '', locationData = null) {
         try {
             console.log('🔄 Generating journal entry...');
+            
+            // Get location data if not provided
+            if (!locationData && window.locationServices) {
+                try {
+                    locationData = await window.locationServices.getJournalLocationData();
+                } catch (error) {
+                    console.warn('⚠️ Could not get location data:', error);
+                }
+            }
+            
             console.log('📊 Input data:', {
                 photoAnalysis: photoAnalysis ? {
                     fallback: photoAnalysis.fallback,
@@ -258,15 +268,36 @@ class ImprovedAIServices {
                     hasCategories: !!(photoAnalysis.categories?.length)
                 } : null,
                 audioTranscription: audioTranscription ? audioTranscription.length + ' chars' : 'none',
-                userInput: userInput ? userInput.length + ' chars' : 'none'
+                userInput: userInput ? userInput.length + ' chars' : 'none',
+                locationData: locationData ? 'available' : 'none'
             });
             
             let generatedContent = '';
             const timestamp = new Date();
             const timeString = timestamp.toLocaleString();
             
-            // Start with timestamp
-            generatedContent += `Entry from ${timeString}\n\n`;
+            // Start with timestamp and context
+            generatedContent += `Entry from ${timeString}`;
+            
+            // Add location context if available
+            if (locationData) {
+                if (locationData.location) {
+                    generatedContent += ` in ${locationData.location}`;
+                }
+                if (locationData.weather) {
+                    generatedContent += ` (${locationData.weather.temperature}°C, ${locationData.weather.description})`;
+                }
+            }
+            
+            generatedContent += '\n\n';
+            
+            // Add contextual opening based on time and weather
+            if (locationData) {
+                const contextualOpening = this.generateContextualOpening(locationData);
+                if (contextualOpening) {
+                    generatedContent += `${contextualOpening}\n\n`;
+                }
+            }
             
             // Add photo analysis if available and not fallback
             if (photoAnalysis) {
@@ -332,8 +363,13 @@ class ImprovedAIServices {
                 generatedContent += `A new memory added to your journal.`;
             }
             
+            // Add weather-based reflection if available
+            if (locationData?.weather) {
+                generatedContent += ` The ${locationData.weather.description} weather adds to the atmosphere of this ${locationData.timeOfDay}.`;
+            }
+            
             console.log('🏷️ Generating tags...');
-            const suggestedTags = this.generateEnhancedTags(photoAnalysis, audioTranscription, userInput);
+            const suggestedTags = this.generateEnhancedTags(photoAnalysis, audioTranscription, userInput, locationData);
             
             console.log('🎭 Detecting mood...');
             const suggestedMood = this.detectMood(photoAnalysis, audioTranscription, userInput);
@@ -343,14 +379,17 @@ class ImprovedAIServices {
                 suggestedTags,
                 suggestedMood,
                 confidence: photoAnalysis?.confidence || 0.5,
-                hasAIAnalysis: photoAnalysis && !photoAnalysis.fallback
+                hasAIAnalysis: photoAnalysis && !photoAnalysis.fallback,
+                locationData: locationData
             };
             
             console.log('✅ Journal entry generated successfully:', {
                 contentLength: result.content.length,
                 tagsCount: result.suggestedTags.length,
                 mood: result.suggestedMood,
-                hasAI: result.hasAIAnalysis
+                hasAI: result.hasAIAnalysis,
+                hasLocation: !!locationData?.location,
+                hasWeather: !!locationData?.weather
             });
             
             return result;
@@ -371,8 +410,48 @@ class ImprovedAIServices {
             };
         }
     }
-    
-    generateEnhancedTags(photoAnalysis, audioTranscription, userInput) {
+
+    generateContextualOpening(locationData) {
+        const openings = [];
+        
+        if (locationData.timeOfDay) {
+            switch (locationData.timeOfDay) {
+                case 'morning':
+                    openings.push('Starting this morning with a moment to capture.');
+                    openings.push('A beautiful morning moment worth remembering.');
+                    break;
+                case 'afternoon':
+                    openings.push('Taking a moment this afternoon to reflect.');
+                    openings.push('Pausing in the afternoon to document this experience.');
+                    break;
+                case 'evening':
+                    openings.push('Winding down the evening with this memory.');
+                    openings.push('An evening moment that deserves to be preserved.');
+                    break;
+                case 'night':
+                    openings.push('A late night reflection on today.');
+                    openings.push('Capturing this quiet night moment.');
+                    break;
+            }
+        }
+        
+        if (locationData.weather) {
+            const weather = locationData.weather.conditions.toLowerCase();
+            if (weather.includes('rain')) {
+                openings.push('The gentle rain creates a peaceful backdrop for this moment.');
+            } else if (weather.includes('sun') || weather.includes('clear')) {
+                openings.push('The sunshine brightens this special moment.');
+            } else if (weather.includes('cloud')) {
+                openings.push('Under cloudy skies, this moment feels contemplative.');
+            } else if (weather.includes('snow')) {
+                openings.push('The snowy weather adds a magical quality to this experience.');
+            }
+        }
+        
+        return openings.length > 0 ? openings[Math.floor(Math.random() * openings.length)] : null;
+    }
+
+    generateEnhancedTags(photoAnalysis, audioTranscription, userInput, locationData) {
         const tags = new Set();
         
         // Add AI-generated tags
@@ -406,16 +485,59 @@ class ImprovedAIServices {
             }
         }
         
-        // Add time-based tags
-        const now = new Date();
-        const hour = now.getHours();
-        const month = now.toLocaleString('default', { month: 'long' }).toLowerCase();
-        
-        if (hour < 12) tags.add('morning');
-        else if (hour < 17) tags.add('afternoon');
-        else tags.add('evening');
-        
-        tags.add(month);
+        // Add location-based tags
+        if (locationData) {
+            // Time-based tags
+            if (locationData.timeOfDay) {
+                tags.add(locationData.timeOfDay);
+            }
+            
+            // Season tags
+            if (locationData.season) {
+                tags.add(locationData.season);
+            }
+            
+            // Weather tags
+            if (locationData.weather) {
+                const weather = locationData.weather.conditions.toLowerCase();
+                tags.add(weather);
+                
+                if (locationData.weather.temperature < 10) {
+                    tags.add('cold');
+                } else if (locationData.weather.temperature > 25) {
+                    tags.add('warm');
+                }
+                
+                if (weather.includes('rain')) {
+                    tags.add('rainy');
+                } else if (weather.includes('sun')) {
+                    tags.add('sunny');
+                } else if (weather.includes('cloud')) {
+                    tags.add('cloudy');
+                }
+            }
+            
+            // Location tags
+            if (locationData.location) {
+                const location = locationData.location.toLowerCase();
+                if (location.includes('park')) tags.add('park');
+                if (location.includes('beach')) tags.add('beach');
+                if (location.includes('city')) tags.add('urban');
+                if (location.includes('home')) tags.add('home');
+                if (location.includes('office')) tags.add('work');
+            }
+        } else {
+            // Fallback time-based tags
+            const now = new Date();
+            const hour = now.getHours();
+            const month = now.toLocaleString('default', { month: 'long' }).toLowerCase();
+            
+            if (hour < 12) tags.add('morning');
+            else if (hour < 17) tags.add('afternoon');
+            else tags.add('evening');
+            
+            tags.add(month);
+        }
         
         // Add content-based tags from text
         const allText = `${audioTranscription} ${userInput}`.toLowerCase();
@@ -438,8 +560,9 @@ class ImprovedAIServices {
         tags.add('memory');
         if (photoAnalysis) tags.add('photo');
         if (audioTranscription) tags.add('audio');
+        if (locationData?.location) tags.add('location');
         
-        return Array.from(tags).slice(0, 10);
+        return Array.from(tags).slice(0, 12);
     }
     
     detectMood(photoAnalysis, audioTranscription, userInput) {

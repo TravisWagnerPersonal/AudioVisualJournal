@@ -452,17 +452,27 @@ body {
     font-weight: 500;
 }
 
-/* ===== Audio Recorder ===== */
+/* ===== Enhanced Audio Recording Styles ===== */
+
 .audio-recorder {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--spacing-md);
-    padding: var(--spacing-xl);
-    background: linear-gradient(135deg, #FF6B6B, #FF8E53);
+    background: linear-gradient(135deg, #ff6b6b, #ffa500);
     border-radius: var(--radius-lg);
-    color: var(--text-inverse);
+    padding: var(--spacing-lg);
     text-align: center;
+    color: white;
+    position: relative;
+    overflow: hidden;
+}
+
+.audio-recorder.recording {
+    background: linear-gradient(135deg, #ff4757, #ff3742);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
 }
 
 .record-button {
@@ -471,33 +481,159 @@ body {
     border-radius: 50%;
     border: none;
     background: rgba(255, 255, 255, 0.2);
-    color: var(--text-inverse);
-    font-size: var(--font-size-2xl);
+    color: white;
+    font-size: 2rem;
     cursor: pointer;
-    transition: all var(--transition-fast);
+    transition: all 0.3s ease;
     backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    margin-bottom: var(--spacing-md);
 }
 
 .record-button:hover {
     background: rgba(255, 255, 255, 0.3);
-    transform: scale(1.05);
+    transform: scale(1.1);
 }
 
 .record-button.recording {
-    animation: pulse 1.5s infinite;
-    background: var(--danger-color);
+    background: rgba(255, 255, 255, 0.9);
+    color: #ff4757;
+    animation: recordingPulse 1s infinite;
 }
 
-@keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
+@keyframes recordingPulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.7); }
+    70% { box-shadow: 0 0 0 20px rgba(255, 255, 255, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
 }
 
 .recording-timer {
-    font-size: var(--font-size-lg);
+    font-size: 1.2rem;
     font-weight: 600;
-    font-variant-numeric: tabular-nums;
+    margin: var(--spacing-sm) 0;
+    font-family: 'Courier New', monospace;
+}
+
+.recording-timer.hidden {
+    display: none;
+}
+
+/* ===== Live Transcription Styles ===== */
+
+.live-transcription-container {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: var(--radius-md);
+    padding: var(--spacing-md);
+    margin-top: var(--spacing-md);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.transcription-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: var(--spacing-sm);
+    font-size: 0.9rem;
+    opacity: 0.9;
+}
+
+.transcription-header small {
+    font-size: 0.8rem;
+    opacity: 0.7;
+}
+
+.live-transcription {
+    background: rgba(255, 255, 255, 0.9);
+    color: var(--text-primary);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    min-height: 60px;
+    text-align: left;
+    font-size: 0.9rem;
+    line-height: 1.4;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.interim-text {
+    opacity: 0.6;
+    font-style: italic;
+}
+
+/* ===== Audio Preview Styles ===== */
+
+.audio-preview {
+    margin-top: var(--spacing-lg);
+    display: none;
+}
+
+.audio-item {
+    background: var(--background-secondary);
+    border-radius: var(--radius-sm);
+    padding: var(--spacing-md);
+    border: 1px solid var(--border-light);
+}
+
+.audio-info {
+    margin-bottom: var(--spacing-md);
+}
+
+.audio-title {
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: var(--spacing-xs);
+}
+
+.audio-transcription {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    line-height: 1.4;
+    max-height: 100px;
+    overflow-y: auto;
+    background: var(--background-primary);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-light);
+}
+
+.audio-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-md);
+}
+
+.audio-controls audio {
+    flex: 1;
+    height: 40px;
+}
+
+.btn-delete {
+    background: var(--danger-color);
+    color: white;
+    border: none;
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 1rem;
+    transition: all 0.2s ease;
+}
+
+.btn-delete:hover {
+    background: var(--danger-color);
+    transform: scale(1.05);
+}
+
+/* ===== Audio Error Styles ===== */
+
+.audio-error {
+    background: #fee;
+    border: 1px solid #fcc;
+    color: #c33;
+    padding: var(--spacing-md);
+    border-radius: var(--radius-sm);
+    margin: var(--spacing-md) 0;
+    text-align: center;
+    font-size: 0.9rem;
 }
 
 /* ===== Mood Selector ===== */
@@ -676,6 +812,35 @@ body {
         height: 50px;
         font-size: var(--font-size-lg);
     }
+
+    .record-button {
+        width: 70px;
+        height: 70px;
+        font-size: 1.8rem;
+    }
+    
+    .audio-recorder {
+        padding: var(--spacing-md);
+    }
+    
+    .live-transcription-container {
+        padding: var(--spacing-sm);
+    }
+    
+    .live-transcription {
+        padding: var(--spacing-sm);
+        min-height: 50px;
+        font-size: 0.85rem;
+    }
+    
+    .audio-controls {
+        flex-direction: column;
+        gap: var(--spacing-sm);
+    }
+    
+    .audio-controls audio {
+        width: 100%;
+    }
 }
 
 @media (max-width: 480px) {
@@ -717,4 +882,36 @@ body {
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
+}
+
+/* ===== Speech Recognition Status ===== */
+
+.speech-status {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--spacing-xs);
+    font-size: 0.8rem;
+    opacity: 0.8;
+    margin-top: var(--spacing-xs);
+}
+
+.speech-status.listening {
+    color: #22c55e;
+}
+
+.speech-status.error {
+    color: #ef4444;
+}
+
+.speech-indicator {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0%, 50% { opacity: 1; }
+    51%, 100% { opacity: 0.3; }
 }

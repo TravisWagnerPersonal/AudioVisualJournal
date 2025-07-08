@@ -181,6 +181,17 @@ class JournalManager {
     async transcribeAudioWithAI() {
         if (this.isAIProcessing) return;
         
+        // Check if we have enhanced audio system with real-time transcription
+        if (window.audioRecording && window.audioRecording.hasAudio()) {
+            const audioData = window.audioRecording.getCurrentAudio();
+            if (audioData.transcription) {
+                this.addTranscriptionToContent(audioData.transcription);
+                this.updateAIStatus('✅ Live transcription already available!');
+                return;
+            }
+        }
+        
+        // Fallback to old transcription method
         if (!this.currentAudio) {
             this.showAIMessage('Please record audio first before transcribing it.');
             return;
@@ -190,24 +201,13 @@ class JournalManager {
         this.updateAIStatus('🎤 Transcribing audio...');
         
         try {
-            const aiServices = window.aiServices;
+            const aiServices = window.improvedAIServices || window.aiServices;
             if (!aiServices) {
                 throw new Error('AI services not available');
             }
             
             const transcription = await aiServices.transcribeAudio(this.currentAudio);
-            
-            // Add transcription to the content
-            const contentTextarea = document.getElementById('entry-content');
-            if (contentTextarea) {
-                const existingContent = contentTextarea.value;
-                const newContent = existingContent ? 
-                    `${existingContent}\n\n🎤 ${transcription}` : 
-                    `🎤 ${transcription}`;
-                contentTextarea.value = newContent;
-                this.triggerAutoSave();
-            }
-            
+            this.addTranscriptionToContent(transcription);
             this.updateAIStatus('✅ Audio transcription complete!');
             
         } catch (error) {
@@ -222,10 +222,10 @@ class JournalManager {
         if (this.isAIProcessing) return;
         
         this.isAIProcessing = true;
-        this.updateAIStatus('✨ Generating journal entry...');
+        this.updateAIStatus('✨ Generating comprehensive journal entry...');
         
         try {
-            const aiServices = window.aiServices;
+            const aiServices = window.improvedAIServices || window.aiServices;
             if (!aiServices) {
                 throw new Error('AI services not available');
             }
@@ -236,25 +236,62 @@ class JournalManager {
             // Get photo analysis
             let photoAnalysis = this.lastAnalysis;
             if (!photoAnalysis && this.currentPhotos.length > 0) {
+                this.updateAIStatus('🔍 Analyzing photos...');
                 photoAnalysis = await aiServices.analyzePhoto(this.currentPhotos[0].dataUrl);
+                this.lastAnalysis = photoAnalysis;
             }
             
-            // Get audio transcription
+            // Get audio transcription from enhanced audio system
             let audioTranscription = '';
-            if (this.currentAudio) {
+            let audioData = null;
+            
+            if (window.audioRecording && window.audioRecording.hasAudio()) {
+                this.updateAIStatus('🎤 Processing audio transcription...');
+                audioData = window.audioRecording.getCurrentAudio();
+                audioTranscription = audioData.transcription;
+                this.currentAudio = audioData.blob;
+            } else if (this.currentAudio) {
+                // Fallback for old audio system
+                this.updateAIStatus('🎤 Transcribing audio...');
                 audioTranscription = await aiServices.transcribeAudio(this.currentAudio);
             }
             
-            // Generate journal entry
+            // Get location data
+            let locationData = null;
+            if (window.locationServices) {
+                this.updateAIStatus('📍 Getting location context...');
+                try {
+                    locationData = await window.locationServices.getJournalLocationData();
+                } catch (error) {
+                    console.warn('⚠️ Could not get location data:', error);
+                }
+            }
+            
+            this.updateAIStatus('🤖 Generating enhanced journal entry...');
+            
+            // Generate journal entry with all available data
             const generated = await aiServices.generateJournalEntry(
                 photoAnalysis,
                 audioTranscription,
-                userInput
+                userInput,
+                locationData
             );
             
             // Apply generated content
             this.applyGeneratedContent(generated);
-            this.updateAIStatus('✅ Journal entry generated!');
+            
+            // Update status with detailed results
+            const features = [];
+            if (photoAnalysis && !photoAnalysis.fallback) features.push('📷 Photo AI');
+            if (audioTranscription) features.push('🎤 Audio Transcription');
+            if (locationData?.location) features.push('📍 Location');
+            if (locationData?.weather) features.push('🌤️ Weather');
+            
+            const statusMessage = features.length > 0 
+                ? `✅ Journal entry generated with ${features.join(', ')}!`
+                : '✅ Basic journal entry generated!';
+                
+            this.updateAIStatus(statusMessage);
             
         } catch (error) {
             console.error('Entry generation failed:', error);
@@ -544,18 +581,58 @@ class JournalManager {
         
         this.autoSaveTimer = setTimeout(() => {
             this.autoSave();
-        }, 1000);
+        }, 2000);
     }
     
-    autoSave() {
-        if (!this.isEditing) return;
-        
-        const entryData = this.collectEntryData();
-        if (entryData.title || entryData.content || entryData.photos.length > 0 || entryData.audio) {
-            console.log('💾 Auto-saving entry...');
-            // Save to localStorage or IndexedDB
-            this.saveToLocalStorage(entryData);
+    async autoSave() {
+        try {
+            const entryData = this.collectEntryData();
+            
+            // Save to localStorage with enhanced data
+            const savedData = {
+                ...entryData,
+                lastSaved: new Date().toISOString(),
+                version: '2.1'
+            };
+            
+            localStorage.setItem('journal_draft', JSON.stringify(savedData));
+            
+            // Update auto-save indicator
+            this.showAutoSaveStatus('Draft saved');
+            
+        } catch (error) {
+            console.error('Auto-save failed:', error);
+            this.showAutoSaveStatus('Save failed', true);
         }
+    }
+
+    showAutoSaveStatus(message, isError = false) {
+        let statusElement = document.getElementById('autosave-status');
+        
+        if (!statusElement) {
+            statusElement = document.createElement('div');
+            statusElement.id = 'autosave-status';
+            statusElement.style.cssText = `
+                position: fixed;
+                top: 70px;
+                right: 20px;
+                background: ${isError ? '#fee' : '#efe'};
+                color: ${isError ? '#c33' : '#363'};
+                padding: 8px 12px;
+                border-radius: 4px;
+                font-size: 0.8rem;
+                z-index: 1000;
+                transition: all 0.3s ease;
+            `;
+            document.body.appendChild(statusElement);
+        }
+        
+        statusElement.textContent = message;
+        statusElement.style.opacity = '1';
+        
+        setTimeout(() => {
+            statusElement.style.opacity = '0';
+        }, 2000);
     }
     
     // ===== Event Handlers =====
@@ -708,8 +785,25 @@ class JournalManager {
     collectEntryData() {
         const title = document.getElementById('entry-title').value.trim();
         const content = document.getElementById('entry-content').value.trim();
-        const tags = document.getElementById('entry-tags').value.split(',').map(t => t.trim()).filter(t => t);
-        const selectedMood = document.querySelector('.mood-btn.selected')?.dataset.mood;
+        const tags = document.getElementById('entry-tags')?.value.split(',').map(t => t.trim()).filter(t => t) || [];
+        const selectedMood = document.querySelector('.mood-option.selected')?.dataset.mood;
+        
+        // Get enhanced audio data
+        let audioData = null;
+        if (window.audioRecording && window.audioRecording.hasAudio()) {
+            audioData = window.audioRecording.getCurrentAudio();
+        } else if (this.currentAudio) {
+            audioData = {
+                blob: this.currentAudio,
+                transcription: ''
+            };
+        }
+        
+        // Get location data
+        let locationData = null;
+        if (window.locationServices) {
+            locationData = window.locationServices.getLocationData();
+        }
         
         return {
             title: title || 'Untitled Entry',
@@ -717,8 +811,10 @@ class JournalManager {
             tags,
             mood: selectedMood,
             photos: [...this.currentPhotos],
-            audio: this.currentAudio,
-            aiAnalysis: this.lastAnalysis
+            audio: audioData,
+            location: locationData,
+            aiAnalysis: this.lastAnalysis,
+            timestamp: new Date()
         };
     }
     
@@ -726,7 +822,7 @@ class JournalManager {
         try {
             if (entryData) {
                 // Save draft/auto-save
-                localStorage.setItem('journal_draft', JSON.stringify(entryData));
+                localStorage.setItem('journal_entries', JSON.stringify(this.entries));
             } else {
                 // Save all entries
                 localStorage.setItem('journal_entries', JSON.stringify(this.entries));

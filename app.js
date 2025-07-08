@@ -15,619 +15,423 @@ const STORES = {
     audio: 'audio'
 };
 
-// ===== App Initialization =====
-async function initializeApp() {
-    console.log('🚀 Initializing Audio-Photo Journal App...');
-    
-    try {
-        // Initialize database
-        await initDatabase();
-        
-        // Setup event listeners
-        setupEventListeners();
-        
-        // Load initial data
-        await loadAllEntries();
-        
-        // Hide loading screen and show app
-        hideLoadingScreen();
-        
-        // Render initial view
-        renderTimeline();
-        
-        console.log('✅ App initialized successfully');
-    } catch (error) {
-        console.error('❌ App initialization failed:', error);
-        showError('Failed to initialize app. Please refresh the page.');
-    }
-}
+// ===== Enhanced App Integration Tests =====
 
-// ===== Database Operations =====
-function initDatabase() {
-    return new Promise((resolve, reject) => {
-        const request = indexedDB.open(DB_NAME, DB_VERSION);
+class AppTester {
+    constructor() {
+        this.testResults = [];
+    }
+
+    async runComprehensiveTests() {
+        console.log('🧪 Starting comprehensive app tests...');
         
-        request.onerror = () => reject(request.error);
-        request.onsuccess = () => {
-            db = request.result;
-            console.log('📀 Database connected');
-            resolve();
-        };
+        // Clear previous results
+        this.testResults = [];
         
-        request.onupgradeneeded = (event) => {
-            db = event.target.result;
-            console.log('🔧 Creating database schema...');
-            
-            // Create entries store
-            if (!db.objectStoreNames.contains(STORES.entries)) {
-                const entriesStore = db.createObjectStore(STORES.entries, { 
-                    keyPath: 'id', 
-                    autoIncrement: false 
-                });
-                entriesStore.createIndex('dateCreated', 'dateCreated', { unique: false });
-                entriesStore.createIndex('title', 'title', { unique: false });
-                entriesStore.createIndex('mood', 'mood', { unique: false });
-                entriesStore.createIndex('tags', 'tags', { unique: false, multiEntry: true });
+        // Test core components
+        await this.testLocationServices();
+        await this.testAudioRecording();
+        await this.testAIServices();
+        await this.testJournalIntegration();
+        
+        // Display results
+        this.displayTestResults();
+        
+        return this.testResults;
+    }
+
+    async testLocationServices() {
+        console.log('📍 Testing location services...');
+        
+        try {
+            if (!window.locationServices) {
+                throw new Error('Location services not initialized');
             }
             
-            // Create photos store
-            if (!db.objectStoreNames.contains(STORES.photos)) {
-                db.createObjectStore(STORES.photos, { 
-                    keyPath: 'id', 
-                    autoIncrement: false 
-                });
+            const capabilities = window.locationServices.getSettings();
+            this.addTestResult('Location Services', 'Available', capabilities.isSupported);
+            
+            // Test getting location data
+            try {
+                const locationData = await window.locationServices.getJournalLocationData();
+                this.addTestResult('Location Data', 'Retrieved', !!locationData);
+                
+                if (locationData.location) {
+                    this.addTestResult('Location String', locationData.location, true);
+                }
+                
+                if (locationData.weather) {
+                    this.addTestResult('Weather Data', `${locationData.weather.temperature}°C`, true);
+                }
+                
+            } catch (error) {
+                this.addTestResult('Location Access', 'Permission denied or unavailable', false);
             }
             
-            // Create audio store
-            if (!db.objectStoreNames.contains(STORES.audio)) {
-                db.createObjectStore(STORES.audio, { 
-                    keyPath: 'id', 
-                    autoIncrement: false 
-                });
+        } catch (error) {
+            this.addTestResult('Location Services', error.message, false);
+        }
+    }
+
+    async testAudioRecording() {
+        console.log('🎤 Testing audio recording...');
+        
+        try {
+            if (!window.audioRecording) {
+                throw new Error('Audio recording not initialized');
             }
-        };
-    });
-}
-
-async function saveEntry(entry) {
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction([STORES.entries], 'readwrite');
-        const store = transaction.objectStore(STORES.entries);
-        
-        // Ensure entry has required properties
-        if (!entry.id) {
-            entry.id = generateId();
-        }
-        if (!entry.dateCreated) {
-            entry.dateCreated = new Date().toISOString();
-        }
-        entry.dateModified = new Date().toISOString();
-        
-        const request = store.put(entry);
-        request.onsuccess = () => {
-            console.log('💾 Entry saved:', entry.id);
-            resolve(entry);
-        };
-        request.onerror = () => reject(request.error);
-    });
-}
-
-async function getEntry(id) {
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction([STORES.entries], 'readonly');
-        const store = transaction.objectStore(STORES.entries);
-        const request = store.get(id);
-        
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-    });
-}
-
-async function deleteEntry(id) {
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction([STORES.entries], 'readwrite');
-        const store = transaction.objectStore(STORES.entries);
-        const request = store.delete(id);
-        
-        request.onsuccess = () => {
-            console.log('🗑️ Entry deleted:', id);
-            resolve();
-        };
-        request.onerror = () => reject(request.error);
-    });
-}
-
-async function getAllEntries() {
-    return new Promise((resolve, reject) => {
-        const transaction = db.transaction([STORES.entries], 'readonly');
-        const store = transaction.objectStore(STORES.entries);
-        const index = store.index('dateCreated');
-        const request = index.getAll();
-        
-        request.onsuccess = () => {
-            const entries = request.result.sort((a, b) => 
-                new Date(b.dateCreated) - new Date(a.dateCreated)
-            );
-            resolve(entries);
-        };
-        request.onerror = () => reject(request.error);
-    });
-}
-
-async function saveMediaFile(file, type) {
-    return new Promise((resolve, reject) => {
-        const storeName = type === 'photo' ? STORES.photos : STORES.audio;
-        const transaction = db.transaction([storeName], 'readwrite');
-        const store = transaction.objectStore(storeName);
-        
-        const mediaData = {
-            id: generateId(),
-            file: file,
-            type: type,
-            dateCreated: new Date().toISOString()
-        };
-        
-        const request = store.put(mediaData);
-        request.onsuccess = () => {
-            console.log(`📎 ${type} saved:`, mediaData.id);
-            resolve(mediaData.id);
-        };
-        request.onerror = () => reject(request.error);
-    });
-}
-
-async function getMediaFile(id, type) {
-    return new Promise((resolve, reject) => {
-        const storeName = type === 'photo' ? STORES.photos : STORES.audio;
-        const transaction = db.transaction([storeName], 'readonly');
-        const store = transaction.objectStore(storeName);
-        const request = store.get(id);
-        
-        request.onsuccess = () => resolve(request.result);
-        request.onerror = () => reject(request.error);
-    });
-}
-
-// ===== Data Management =====
-async function loadAllEntries() {
-    try {
-        allEntries = await getAllEntries();
-        console.log(`📚 Loaded ${allEntries.length} entries`);
-    } catch (error) {
-        console.error('Failed to load entries:', error);
-        allEntries = [];
-    }
-}
-
-function filterEntries() {
-    if (!searchTerm) return allEntries;
-    
-    const term = searchTerm.toLowerCase();
-    return allEntries.filter(entry => 
-        entry.title?.toLowerCase().includes(term) ||
-        entry.content?.toLowerCase().includes(term) ||
-        entry.tags?.some(tag => tag.toLowerCase().includes(term))
-    );
-}
-
-// ===== Event Listeners =====
-function setupEventListeners() {
-    // Navigation
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const view = e.currentTarget.dataset.view;
-            if (view && view !== 'create') {
-                navigateToView(view);
-            } else if (view === 'create') {
-                showCreateEntry();
+            
+            const capabilities = window.audioRecording.getCapabilities();
+            this.addTestResult('Audio Recording', 'Available', capabilities.canRecord);
+            this.addTestResult('Speech Recognition', 'Available', capabilities.canTranscribe);
+            this.addTestResult('Audio Format', capabilities.supportedFormats, true);
+            
+            // Test if microphone permission is available
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+                this.addTestResult('Microphone Access', 'Granted', true);
+            } catch (error) {
+                this.addTestResult('Microphone Access', 'Denied or unavailable', false);
             }
-        });
-    });
-    
-    // Header buttons (check if elements exist)
-    const searchBtn = document.getElementById('search-btn');
-    const searchClose = document.getElementById('search-close');
-    const searchInput = document.getElementById('search-input');
-    
-    if (searchBtn) searchBtn.addEventListener('click', toggleSearch);
-    if (searchClose) searchClose.addEventListener('click', closeSearch);
-    if (searchInput) searchInput.addEventListener('input', handleSearch);
-    
-    // View controls
-    document.querySelectorAll('[data-view-mode]').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const view = e.currentTarget.dataset.viewMode;
-            toggleViewMode(view);
-        });
-    });
-    
-    // Create/Edit form
-    const cancelBtn = document.getElementById('cancel-create');
-    const saveBtn = document.getElementById('save-entry');
-    
-    if (cancelBtn) cancelBtn.addEventListener('click', () => navigateToView('timeline'));
-    if (saveBtn) saveBtn.addEventListener('click', handleSaveEntry);
-    
-    // Detail view
-    const backBtn = document.getElementById('back-to-timeline');
-    const editBtn = document.getElementById('edit-entry');
-    
-    if (backBtn) backBtn.addEventListener('click', () => navigateToView('timeline'));
-    if (editBtn) editBtn.addEventListener('click', handleEditEntry);
-    
-    // Mood selector
-    document.querySelectorAll('.mood-option').forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            document.querySelectorAll('.mood-option').forEach(b => b.classList.remove('selected'));
-            e.currentTarget.classList.add('selected');
-        });
-    });
-    
-    // Prevent default form submission
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && e.target.tagName !== 'TEXTAREA') {
-            e.preventDefault();
+            
+        } catch (error) {
+            this.addTestResult('Audio Recording', error.message, false);
         }
-    });
-    
-    console.log('🎧 Event listeners setup complete');
-}
+    }
 
-// ===== Navigation =====
-function navigateToView(viewName) {
-    // Update navigation state
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.view === viewName);
-    });
-    
-    // Hide all views
-    document.querySelectorAll('.view').forEach(view => {
-        view.classList.remove('active');
-    });
-    
-    // Show target view
-    const targetView = document.getElementById(`${viewName}-view`);
-    if (targetView) {
-        targetView.classList.add('active');
-        currentView = viewName;
+    async testAIServices() {
+        console.log('🤖 Testing AI services...');
         
-        // View-specific actions
-        switch (viewName) {
-            case 'timeline':
-                renderTimeline();
-                break;
-            case 'create':
-                resetCreateForm();
-                break;
+        try {
+            const aiServices = window.improvedAIServices || window.aiServices;
+            if (!aiServices) {
+                throw new Error('AI services not initialized');
+            }
+            
+            const capabilities = aiServices.getCapabilities();
+            this.addTestResult('AI Photo Analysis', 'Available', capabilities.photoAnalysis);
+            this.addTestResult('AI Speech Recognition', 'Available', capabilities.speechRecognition);
+            this.addTestResult('AI Smart Generation', 'Available', capabilities.smartGeneration);
+            
+            // Test API connection if key is available
+            if (capabilities.photoAnalysis) {
+                try {
+                    const connectionTest = await aiServices.testApiConnection();
+                    this.addTestResult('Astica API', connectionTest.message, connectionTest.success);
+                } catch (error) {
+                    this.addTestResult('Astica API', 'Connection failed', false);
+                }
+            }
+            
+            // Test tag generation
+            if (aiServices.testTagGeneration) {
+                const tagTest = aiServices.testTagGeneration();
+                this.addTestResult('Tag Generation', 'Test passed', tagTest);
+            }
+            
+            // Test journal generation
+            if (aiServices.testJournalGeneration) {
+                const journalTest = aiServices.testJournalGeneration();
+                this.addTestResult('Journal Generation', 'Test passed', journalTest);
+            }
+            
+        } catch (error) {
+            this.addTestResult('AI Services', error.message, false);
         }
     }
-}
 
-function showCreateEntry() {
-    currentEntry = null;
-    navigateToView('create');
-    document.getElementById('create-title').textContent = 'New Entry';
-}
-
-function showEditEntry(entry) {
-    currentEntry = entry;
-    navigateToView('create');
-    document.getElementById('create-title').textContent = 'Edit Entry';
-    populateCreateForm(entry);
-}
-
-function showEntryDetail(entry) {
-    currentEntry = entry;
-    renderEntryDetail(entry);
-    navigateToView('detail');
-}
-
-// ===== Search Functionality =====
-function toggleSearch() {
-    const searchContainer = document.getElementById('search-container');
-    const searchInput = document.getElementById('search-input');
-    
-    if (searchContainer.classList.contains('hidden')) {
-        searchContainer.classList.remove('hidden');
-        searchInput.focus();
-    } else {
-        closeSearch();
+    async testJournalIntegration() {
+        console.log('📖 Testing journal integration...');
+        
+        try {
+            if (!window.journalManager) {
+                throw new Error('Journal manager not initialized');
+            }
+            
+            this.addTestResult('Journal Manager', 'Available', true);
+            
+            // Test data collection
+            const testData = window.journalManager.collectEntryData();
+            this.addTestResult('Data Collection', 'Working', !!testData);
+            
+            // Test local storage
+            try {
+                localStorage.setItem('test_item', 'test_value');
+                const retrieved = localStorage.getItem('test_item');
+                localStorage.removeItem('test_item');
+                this.addTestResult('Local Storage', 'Working', retrieved === 'test_value');
+            } catch (error) {
+                this.addTestResult('Local Storage', 'Not available', false);
+            }
+            
+        } catch (error) {
+            this.addTestResult('Journal Integration', error.message, false);
+        }
     }
-}
 
-function closeSearch() {
-    const searchContainer = document.getElementById('search-container');
-    const searchInput = document.getElementById('search-input');
-    
-    searchContainer.classList.add('hidden');
-    searchInput.value = '';
-    searchTerm = '';
-    renderTimeline();
-}
-
-function handleSearch(e) {
-    searchTerm = e.target.value;
-    renderTimeline();
-}
-
-// ===== View Rendering =====
-function renderTimeline() {
-    const container = document.getElementById('entries-container');
-    const emptyState = document.getElementById('empty-state');
-    const filteredEntries = filterEntries();
-    
-    if (filteredEntries.length === 0) {
-        container.innerHTML = '';
-        emptyState.style.display = 'block';
-        return;
+    addTestResult(feature, result, success) {
+        this.testResults.push({
+            feature,
+            result,
+            success,
+            timestamp: new Date()
+        });
+        
+        const icon = success ? '✅' : '❌';
+        console.log(`${icon} ${feature}: ${result}`);
     }
-    
-    emptyState.style.display = 'none';
-    container.innerHTML = filteredEntries.map(entry => createEntryCard(entry)).join('');
-    
-    // Add click listeners to entry cards
-    container.querySelectorAll('.entry-card').forEach((card, index) => {
-        card.addEventListener('click', () => showEntryDetail(filteredEntries[index]));
-    });
-}
 
-function createEntryCard(entry) {
-    const date = new Date(entry.dateCreated).toLocaleDateString('en-US', {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric'
-    });
-    
-    const time = new Date(entry.dateCreated).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-    });
-    
-    const mood = entry.mood ? getMoodEmoji(entry.mood) : '';
-    const hasPhoto = entry.photoIds && entry.photoIds.length > 0;
-    const hasAudio = entry.audioId;
-    const tags = entry.tags || [];
-    
-    return `
-        <div class="entry-card ${isGridView ? 'grid-view' : ''}">
-            <div class="entry-header">
-                <div class="entry-title">${escapeHtml(entry.title || 'Untitled')}</div>
-                <div class="entry-date">
-                    ${date} at ${time}
-                    ${mood ? `<span class="entry-mood">${mood}</span>` : ''}
+    displayTestResults() {
+        const passed = this.testResults.filter(r => r.success).length;
+        const total = this.testResults.length;
+        const percentage = Math.round((passed / total) * 100);
+        
+        console.log(`\n🧪 Test Results: ${passed}/${total} passed (${percentage}%)`);
+        
+        // Create visual test report
+        this.createTestReport();
+    }
+
+    createTestReport() {
+        const existingReport = document.getElementById('test-report');
+        if (existingReport) {
+            existingReport.remove();
+        }
+        
+        const passed = this.testResults.filter(r => r.success).length;
+        const total = this.testResults.length;
+        const percentage = Math.round((passed / total) * 100);
+        
+        const report = document.createElement('div');
+        report.id = 'test-report';
+        report.style.cssText = `
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            max-width: 400px;
+            max-height: 80vh;
+            overflow-y: auto;
+            z-index: 10000;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        `;
+        
+        report.innerHTML = `
+            <div style="display: flex; justify-content: between; align-items: center; margin-bottom: 15px;">
+                <h3>🧪 App Test Results</h3>
+                <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; font-size: 18px; cursor: pointer;">×</button>
+            </div>
+            <div style="margin-bottom: 15px;">
+                <strong>Overall: ${passed}/${total} passed (${percentage}%)</strong>
+                <div style="background: #f0f0f0; height: 8px; border-radius: 4px; margin-top: 5px;">
+                    <div style="background: ${percentage > 80 ? '#22c55e' : percentage > 60 ? '#f59e0b' : '#ef4444'}; height: 100%; width: ${percentage}%; border-radius: 4px;"></div>
                 </div>
             </div>
-            ${hasPhoto ? `<div class="entry-media">
-                <div class="entry-photo" style="background-image: url(${entry.photoPreview}); height: 160px; background-size: cover; background-position: center;"></div>
-            </div>` : ''}
-            <div class="entry-content">
-                ${entry.content ? `<div class="entry-text">${escapeHtml(entry.content)}</div>` : ''}
-                ${hasAudio ? `<div class="entry-audio-indicator">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                        <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
-                    </svg>
-                    Audio recording
-                </div>` : ''}
-                ${tags.length > 0 ? `<div class="entry-tags">
-                    ${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
-                </div>` : ''}
-            </div>
-        </div>
-    `;
-}
-
-function renderEntryDetail(entry) {
-    const container = document.getElementById('detail-content');
-    const date = new Date(entry.dateCreated).toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-    
-    const time = new Date(entry.dateCreated).toLocaleTimeString('en-US', {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true
-    });
-    
-    const mood = entry.mood ? getMoodEmoji(entry.mood) : '';
-    const tags = entry.tags || [];
-    
-    container.innerHTML = `
-        <div class="detail-header-info">
-            <h1>${escapeHtml(entry.title || 'Untitled')}</h1>
-            <div class="detail-date">${date} at ${time} ${mood}</div>
-        </div>
-        
-        ${entry.photoIds && entry.photoIds.length > 0 ? `
-            <div class="detail-photos">
-                ${entry.photoIds.map(photoId => `
-                    <img src="${entry.photoPreview}" alt="Journal photo" class="detail-photo">
-                `).join('')}
-            </div>
-        ` : ''}
-        
-        ${entry.audioId ? `
-            <div class="detail-audio">
-                <div class="audio-player">
-                    <button class="audio-play-btn" onclick="playAudio('${entry.audioId}')">▶</button>
-                    <div class="audio-info">
-                        <div class="audio-duration">Audio recording</div>
-                        <div class="audio-waveform">
-                            <div class="audio-progress" style="width: 0%"></div>
+            <div style="max-height: 300px; overflow-y: auto;">
+                ${this.testResults.map(test => `
+                    <div style="display: flex; align-items: center; margin-bottom: 8px; font-size: 0.9rem;">
+                        <span style="margin-right: 8px;">${test.success ? '✅' : '❌'}</span>
+                        <div>
+                            <div style="font-weight: 600;">${test.feature}</div>
+                            <div style="color: #666; font-size: 0.8rem;">${test.result}</div>
                         </div>
                     </div>
-                </div>
+                `).join('')}
             </div>
-        ` : ''}
+            <div style="margin-top: 15px; text-align: center;">
+                <button onclick="window.appTester.runComprehensiveTests()" style="background: #007AFF; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">🔄 Rerun Tests</button>
+            </div>
+        `;
         
-        ${entry.content ? `
-            <div class="detail-content-text">
-                <h3>Notes</h3>
-                <p>${escapeHtml(entry.content).replace(/\n/g, '<br>')}</p>
-            </div>
-        ` : ''}
+        document.body.appendChild(report);
+    }
+
+    // Manual test functions for debugging
+    async testPhotoAI() {
+        console.log('📷 Testing photo AI...');
+        const aiServices = window.improvedAIServices || window.aiServices;
+        if (!aiServices) return;
         
-        ${tags.length > 0 ? `
-            <div class="detail-tags">
-                <h3>Tags</h3>
-                <div class="tags-list">
-                    ${tags.map(tag => `<span class="tag">${escapeHtml(tag)}</span>`).join('')}
-                </div>
-            </div>
-        ` : ''}
-    `;
-}
-
-function toggleViewMode(mode) {
-    document.querySelectorAll('.view-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.view === mode);
-    });
-    
-    isGridView = mode === 'grid';
-    renderTimeline();
-}
-
-// ===== Form Handling =====
-function resetCreateForm() {
-    const titleInput = document.getElementById('entry-title');
-    const contentInput = document.getElementById('entry-content');
-    const tagsInput = document.getElementById('entry-tags');
-    const photoPreview = document.getElementById('photo-preview');
-    const audioPreview = document.getElementById('audio-preview');
-    
-    if (titleInput) titleInput.value = '';
-    if (contentInput) contentInput.value = '';
-    if (tagsInput) tagsInput.value = '';
-    if (photoPreview) photoPreview.innerHTML = '';
-    if (audioPreview) audioPreview.innerHTML = '';
-    
-    document.querySelectorAll('.mood-option').forEach(btn => {
-        btn.classList.remove('selected');
-    });
-    
-    currentEntry = null;
-}
-
-function populateCreateForm(entry) {
-    const titleInput = document.getElementById('entry-title');
-    const contentInput = document.getElementById('entry-content');
-    const tagsInput = document.getElementById('entry-tags');
-    
-    if (titleInput) titleInput.value = entry.title || '';
-    if (contentInput) contentInput.value = entry.content || '';
-    if (tagsInput) tagsInput.value = entry.tags ? entry.tags.join(', ') : '';
-    
-    // Set mood
-    if (entry.mood) {
-        const moodBtn = document.querySelector(`[data-mood="${entry.mood}"]`);
-        if (moodBtn) {
-            document.querySelectorAll('.mood-option').forEach(btn => btn.classList.remove('selected'));
-            moodBtn.classList.add('selected');
+        // Create a test image
+        const canvas = document.createElement('canvas');
+        canvas.width = 100;
+        canvas.height = 100;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#4CAF50';
+        ctx.fillRect(0, 0, 100, 100);
+        
+        const testImage = canvas.toDataURL();
+        
+        try {
+            const result = await aiServices.analyzePhoto(testImage);
+            console.log('📷 Photo AI test result:', result);
+            return result;
+        } catch (error) {
+            console.error('📷 Photo AI test failed:', error);
+            return null;
         }
     }
-    
-    // TODO: Populate photo and audio previews
+
+    async testFullJournalFlow() {
+        console.log('📖 Testing full journal flow...');
+        
+        try {
+            // Get location data
+            let locationData = null;
+            if (window.locationServices) {
+                locationData = await window.locationServices.getJournalLocationData();
+            }
+            
+            // Generate a test journal entry
+            const aiServices = window.improvedAIServices || window.aiServices;
+            if (aiServices) {
+                const testEntry = await aiServices.generateJournalEntry(
+                    null, // No photo
+                    'This is a test audio transcription.', // Test audio
+                    'This is test user input.', // Test user input
+                    locationData // Location data
+                );
+                
+                console.log('📖 Full journal flow test result:', testEntry);
+                return testEntry;
+            }
+            
+        } catch (error) {
+            console.error('📖 Full journal flow test failed:', error);
+            return null;
+        }
+    }
 }
 
-async function handleSaveEntry() {
+// ===== Enhanced App Initialization =====
+
+async function initializeApp() {
+    console.log('🚀 Initializing enhanced Audio Journal app...');
+    
     try {
-        const titleInput = document.getElementById('entry-title');
-        const contentInput = document.getElementById('entry-content');
-        const tagsInput = document.getElementById('entry-tags');
-        const selectedMood = document.querySelector('.mood-option.selected');
+        // Wait for all services to be available
+        await waitForServices();
         
-        const title = titleInput ? titleInput.value.trim() : '';
-        const content = contentInput ? contentInput.value.trim() : '';
-        const tagsInputValue = tagsInput ? tagsInput.value.trim() : '';
+        // Initialize core components
+        if (typeof JournalManager !== 'undefined') {
+            window.journalManager = new JournalManager();
+        }
         
-        if (!title && !content) {
-            showError('Please add a title or some content to your entry.');
+        // Initialize app tester
+        window.appTester = new AppTester();
+        
+        // Set up global event listeners
+        setupGlobalEventListeners();
+        
+        // Show app and hide loading
+        const app = document.getElementById('app');
+        const loading = document.getElementById('loading-screen');
+        
+        if (loading) loading.style.display = 'none';
+        if (app) app.style.display = 'block';
+        
+        console.log('✅ App initialization complete');
+        
+        // Auto-run tests in debug mode
+        if (localStorage.getItem('debug_mode') === 'true') {
+            setTimeout(() => {
+                window.appTester.runComprehensiveTests();
+            }, 1000);
+        }
+        
+    } catch (error) {
+        console.error('❌ App initialization failed:', error);
+        showInitializationError(error);
+    }
+}
+
+async function waitForServices() {
+    const maxWait = 10000; // 10 seconds
+    const checkInterval = 100; // 100ms
+    let waited = 0;
+    
+    while (waited < maxWait) {
+        const servicesReady = 
+            window.LocationServices && 
+            window.AudioRecording && 
+            (window.improvedAIServices || window.aiServices);
+            
+        if (servicesReady) {
             return;
         }
         
-        const entry = {
-            id: currentEntry?.id || generateId(),
-            title: title,
-            content: content,
-            mood: selectedMood?.dataset.mood || null,
-            tags: tagsInputValue ? tagsInputValue.split(',').map(tag => tag.trim()).filter(tag => tag) : [],
-            photoIds: [], // TODO: Implement photo handling
-            audioId: null, // TODO: Implement audio handling
-            dateCreated: currentEntry?.dateCreated || new Date().toISOString(),
-            dateModified: new Date().toISOString()
-        };
-        
-        await saveEntry(entry);
-        await loadAllEntries();
-        
-        showSuccess(currentEntry ? 'Entry updated successfully!' : 'Entry saved successfully!');
-        navigateToView('timeline');
-        
-    } catch (error) {
-        console.error('Failed to save entry:', error);
-        showError('Failed to save entry. Please try again.');
+        await new Promise(resolve => setTimeout(resolve, checkInterval));
+        waited += checkInterval;
     }
+    
+    throw new Error('Services failed to initialize within timeout');
 }
 
-function handleEditEntry() {
-    if (currentEntry) {
-        showEditEntry(currentEntry);
-    }
+function setupGlobalEventListeners() {
+    // Listen for audio processing events
+    document.addEventListener('audioProcessed', (event) => {
+        console.log('🎤 Audio processed:', event.detail);
+        if (window.journalManager) {
+            window.journalManager.currentAudio = event.detail.blob;
+        }
+    });
+    
+    // Listen for location updates
+    document.addEventListener('locationUpdate', (event) => {
+        console.log('📍 Location updated:', event.detail);
+    });
+    
+    // Enhanced keyboard shortcuts
+    document.addEventListener('keydown', (event) => {
+        if (event.ctrlKey || event.metaKey) {
+            switch (event.key) {
+                case 't':
+                    event.preventDefault();
+                    if (window.appTester) {
+                        window.appTester.runComprehensiveTests();
+                    }
+                    break;
+                case 'l':
+                    event.preventDefault();
+                    if (window.LocationIntegration) {
+                        window.LocationIntegration.showLocationSettings();
+                    }
+                    break;
+            }
+        }
+    });
 }
 
-// ===== Utility Functions =====
-function generateId() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+function showInitializationError(error) {
+    const errorDiv = document.createElement('div');
+    errorDiv.style.cssText = `
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: #fee;
+        border: 1px solid #fcc;
+        color: #c33;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        z-index: 10000;
+    `;
+    errorDiv.innerHTML = `
+        <h3>App Initialization Failed</h3>
+        <p>${error.message}</p>
+        <button onclick="location.reload()" style="background: #007AFF; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer;">Reload App</button>
+    `;
+    document.body.appendChild(errorDiv);
 }
 
-function escapeHtml(text) {
-    const div = document.createElement('div');
-    div.textContent = text;
-    return div.innerHTML;
-}
-
-function getMoodEmoji(mood) {
-    const moodEmojis = {
-        happy: '😊',
-        sad: '😢',
-        excited: '🤩',
-        calm: '😌',
-        anxious: '😰',
-        grateful: '🙏'
-    };
-    return moodEmojis[mood] || '';
-}
-
-function hideLoadingScreen() {
-    const loadingScreen = document.getElementById('loading-screen');
-    setTimeout(() => {
-        loadingScreen.style.opacity = '0';
-        setTimeout(() => {
-            loadingScreen.style.display = 'none';
-            document.getElementById('app').style.display = 'flex';
-        }, 500);
-    }, 1000);
-}
-
-function showError(message) {
-    // TODO: Implement proper error toast
-    alert('Error: ' + message);
-}
-
-function showSuccess(message) {
-    // TODO: Implement proper success toast
-    console.log('Success: ' + message);
-}
-
-// ===== Export for global use =====
-window.showCreateEntry = showCreateEntry;
-window.showEditEntry = showEditEntry;
-window.showEntryDetail = showEntryDetail;
-window.initializeApp = initializeApp;
-
-// ===== Initialize App =====
-document.addEventListener('DOMContentLoaded', initializeApp); 
+// Initialize when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeApp);
+} else {
+    initializeApp();
+} 

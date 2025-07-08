@@ -1,6 +1,6 @@
 // ===== Service Worker for Audio-Photo Journal =====
-const CACHE_NAME = 'audio-photo-journal-v1.0.7';
-const RUNTIME_CACHE = 'runtime-cache-v1';
+const CACHE_NAME = 'audio-photo-journal-v2.0.0';
+const RUNTIME_CACHE = 'runtime-cache-v2';
 
 // Core files to cache - using relative paths for better compatibility
 const CORE_FILES = [
@@ -10,6 +10,8 @@ const CORE_FILES = [
     './journal.js',
     './audio.js',
     './camera.js',
+    './location-services.js',
+    './ai-services-improved.js',
     './manifest.json'
 ];
 
@@ -21,11 +23,11 @@ const OPTIONAL_FILES = [
     './icons/maskable-icon.png',
     './icons/favicon-32x32.png',
     './startup.png',
-    './ai-services-improved.js',
     './photo-manager.js',
     './settings.js',
     './mobile.css',
-    './photo-viewer.css'
+    './photo-viewer.css',
+    './test-functionality.js'
 ];
 
 // Runtime caching patterns

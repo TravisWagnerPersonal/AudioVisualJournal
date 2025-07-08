@@ -142,7 +142,7 @@
                     <div class="section">
                         <div class="section-title">
                             <div class="section-icon">🎤</div>
-                            Audio Recording
+                            Audio Recording with Live Transcription
                         </div>
                         <div class="audio-recorder">
                             <button id="record-btn" class="record-button" type="button">
@@ -150,8 +150,12 @@
                             </button>
                             <div id="recording-timer" class="recording-timer hidden">00:00</div>
                             <p>Tap to record your voice</p>
+                            <div class="speech-status" id="speech-status">
+                                <div class="speech-indicator"></div>
+                                <span>Ready to record with live transcription</span>
+                            </div>
                         </div>
-                        <div id="audio-preview" class="audio-preview mt-4"></div>
+                        <div id="audio-preview" class="audio-preview"></div>
                     </div>
                     
                     <!-- Mood & Tags -->
@@ -269,6 +273,29 @@
                         </div>
                     </div>
 
+                    <!-- Location & Weather -->
+                    <div class="section">
+                        <div class="section-title">
+                            <div class="section-icon">📍</div>
+                            Location & Weather
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">
+                                <input type="checkbox" id="location-enabled-toggle"> Enable location services
+                            </label>
+                            <small>Capture location data for journal entries</small>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Weather API Key (OpenWeatherMap):</label>
+                            <input type="password" id="weather-api-key" class="form-input" placeholder="Enter your weather API key">
+                            <small>Get a free API key at <a href="https://openweathermap.org/api" target="_blank">openweathermap.org</a></small>
+                        </div>
+                        <div class="btn-group">
+                            <button id="location-settings-btn" class="btn btn-secondary">📍 Location Settings</button>
+                            <button id="test-location-btn" class="btn btn-secondary">🧪 Test Location</button>
+                        </div>
+                    </div>
+
                     <!-- Data Management -->
                     <div class="section">
                         <div class="section-title">
@@ -343,7 +370,9 @@
     </div>
 
     <!-- Scripts -->
-    <script src="debug.js"></script>    <script src="app.js?v=2.1"></script>
+    <script src="debug.js"></script>
+    <script src="location-services.js?v=2.1"></script>
+    <script src="app.js?v=2.1"></script>
     <script src="journal.js?v=2.1"></script>
     <script src="camera.js?v=2.1"></script>
     <script src="audio.js?v=2.1"></script>
