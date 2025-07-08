@@ -104,6 +104,17 @@ class ImprovedAIServices {
             
             if (result.status === 'error') {
                 console.error('❌ Astica API returned error:', result.error);
+                
+                // Check if it's a billing issue
+                if (result.error && result.error.includes('Vision Compute')) {
+                    console.warn('💳 Billing Issue: Your Astica API credits are exhausted');
+                    console.warn('🔗 Add credits at: https://astica.ai/account');
+                    console.warn('✅ App will continue with basic analysis');
+                    
+                    // Show user-friendly notification
+                    this.showBillingNotification();
+                }
+                
                 return this.getEnhancedFallbackAnalysis(imageData);
             }
             
@@ -223,14 +234,33 @@ class ImprovedAIServices {
             }
             
             // Since Web Speech API can't transcribe pre-recorded audio,
-            // we provide a helpful message
-            resolve('Audio recording captured. For transcription, please use the live speech recognition while recording.');
+            // we provide a helpful message with some analysis
+            const duration = audioBlob ? Math.round(audioBlob.size / 1000) : 0;
+            if (duration > 0) {
+                resolve(`🎤 Audio recording captured (${duration}s). For transcription, please use the live speech recognition while recording.`);
+            } else {
+                resolve('Audio recording captured. For transcription, please use the live speech recognition while recording.');
+            }
         });
     }
     
     // ===== Enhanced Journal Entry Generation =====
     async generateJournalEntry(photoAnalysis, audioTranscription, userInput = '') {
         try {
+            console.log('🔄 Generating journal entry...');
+            console.log('📊 Input data:', {
+                photoAnalysis: photoAnalysis ? {
+                    fallback: photoAnalysis.fallback,
+                    hasDescription: !!photoAnalysis.description,
+                    hasObjects: !!(photoAnalysis.objects?.length),
+                    hasFaces: !!(photoAnalysis.faces?.length),
+                    hasText: !!(photoAnalysis.text?.length),
+                    hasCategories: !!(photoAnalysis.categories?.length)
+                } : null,
+                audioTranscription: audioTranscription ? audioTranscription.length + ' chars' : 'none',
+                userInput: userInput ? userInput.length + ' chars' : 'none'
+            });
+            
             let generatedContent = '';
             const timestamp = new Date();
             const timeString = timestamp.toLocaleString();
@@ -240,6 +270,7 @@ class ImprovedAIServices {
             
             // Add photo analysis if available and not fallback
             if (photoAnalysis) {
+                console.log('📷 Processing photo analysis...');
                 if (!photoAnalysis.fallback) {
                     // Rich AI analysis available
                     generatedContent += `📷 Photo Analysis:\n`;
@@ -279,11 +310,13 @@ class ImprovedAIServices {
             
             // Add audio transcription
             if (audioTranscription && audioTranscription.trim()) {
+                console.log('🎤 Adding audio transcription...');
                 generatedContent += `🎤 Audio Notes:\n${audioTranscription}\n\n`;
             }
             
             // Add user input
             if (userInput && userInput.trim()) {
+                console.log('✍️ Adding user input...');
                 generatedContent += `✍️ Notes:\n${userInput}\n\n`;
             }
             
@@ -299,16 +332,36 @@ class ImprovedAIServices {
                 generatedContent += `A new memory added to your journal.`;
             }
             
-            return {
+            console.log('🏷️ Generating tags...');
+            const suggestedTags = this.generateEnhancedTags(photoAnalysis, audioTranscription, userInput);
+            
+            console.log('🎭 Detecting mood...');
+            const suggestedMood = this.detectMood(photoAnalysis, audioTranscription, userInput);
+            
+            const result = {
                 content: generatedContent.trim(),
-                suggestedTags: this.generateEnhancedTags(photoAnalysis, audioTranscription, userInput),
-                suggestedMood: this.detectMood(photoAnalysis, audioTranscription, userInput),
+                suggestedTags,
+                suggestedMood,
                 confidence: photoAnalysis?.confidence || 0.5,
                 hasAIAnalysis: photoAnalysis && !photoAnalysis.fallback
             };
             
+            console.log('✅ Journal entry generated successfully:', {
+                contentLength: result.content.length,
+                tagsCount: result.suggestedTags.length,
+                mood: result.suggestedMood,
+                hasAI: result.hasAIAnalysis
+            });
+            
+            return result;
+            
         } catch (error) {
-            console.error('Journal generation failed:', error);
+            console.error('❌ Journal generation failed:', error);
+            console.error('📊 Error details:', {
+                name: error.name,
+                message: error.message,
+                stack: error.stack
+            });
             return {
                 content: userInput || `Entry from ${new Date().toLocaleString()}\n\nA new journal entry.`,
                 suggestedTags: ['journal'],
@@ -324,18 +377,31 @@ class ImprovedAIServices {
         
         // Add AI-generated tags
         if (photoAnalysis && !photoAnalysis.fallback) {
-            if (photoAnalysis.tags) {
-                photoAnalysis.tags.slice(0, 5).forEach(tag => tags.add(tag.toLowerCase()));
+            if (photoAnalysis.tags && Array.isArray(photoAnalysis.tags)) {
+                photoAnalysis.tags.slice(0, 5).forEach(tag => {
+                    const tagStr = typeof tag === 'string' ? tag : (tag?.name || String(tag));
+                    if (tagStr && typeof tagStr === 'string') {
+                        tags.add(tagStr.toLowerCase());
+                    }
+                });
             }
             
-            if (photoAnalysis.categories) {
-                photoAnalysis.categories.forEach(cat => tags.add(cat.toLowerCase()));
+            if (photoAnalysis.categories && Array.isArray(photoAnalysis.categories)) {
+                photoAnalysis.categories.forEach(cat => {
+                    const catStr = typeof cat === 'string' ? cat : (cat?.name || String(cat));
+                    if (catStr && typeof catStr === 'string') {
+                        tags.add(catStr.toLowerCase());
+                    }
+                });
             }
             
-            if (photoAnalysis.objects) {
+            if (photoAnalysis.objects && Array.isArray(photoAnalysis.objects)) {
                 photoAnalysis.objects.slice(0, 3).forEach(obj => {
-                    const name = obj.name || obj;
-                    if (name) tags.add(name.toLowerCase());
+                    const name = obj?.name || obj;
+                    const nameStr = typeof name === 'string' ? name : String(name);
+                    if (nameStr && typeof nameStr === 'string' && nameStr !== 'undefined' && nameStr !== 'null') {
+                        tags.add(nameStr.toLowerCase());
+                    }
                 });
             }
         }
@@ -446,6 +512,41 @@ class ImprovedAIServices {
         }
     }
     
+    async checkAccountStatus() {
+        console.log('🔍 Checking Astica account status...');
+        
+        if (!this.asticaApiKey) {
+            console.error('❌ No API key configured');
+            return { success: false, message: 'No API key configured' };
+        }
+        
+        try {
+            const testResult = await this.testApiConnection();
+            
+            if (testResult.success) {
+                console.log('✅ Account Status: Active');
+                console.log('💰 Credits: Available');
+                console.log('🔗 Account: https://astica.ai/account');
+                return { success: true, message: 'Account is active with available credits' };
+            } else {
+                console.error('❌ Account Status: Issue detected');
+                console.error('💳 Error:', testResult.message);
+                
+                if (testResult.message.includes('Vision Compute')) {
+                    console.warn('💳 BILLING ISSUE: Credits exhausted');
+                    console.warn('🔗 Add credits at: https://astica.ai/account');
+                    console.warn('✅ App will continue with basic analysis');
+                }
+                
+                return { success: false, message: testResult.message };
+            }
+            
+        } catch (error) {
+            console.error('❌ Status check failed:', error);
+            return { success: false, message: error.message };
+        }
+    }
+    
     // ===== Settings Management =====
     getSettings() {
         return {
@@ -486,6 +587,107 @@ class ImprovedAIServices {
             autoTagging: true,
             apiTesting: true
         };
+    }
+
+    showBillingNotification() {
+        // Check if we already showed this notification recently
+        const lastShown = localStorage.getItem('billing_notification_shown');
+        const now = Date.now();
+        
+        // Only show once per hour to avoid spam
+        if (lastShown && (now - parseInt(lastShown)) < 3600000) {
+            return;
+        }
+        
+        // Create a non-intrusive notification
+        const notification = document.createElement('div');
+        notification.className = 'ai-billing-notification';
+        notification.style.cssText = `
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 8px;
+            padding: 15px;
+            max-width: 300px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            z-index: 10000;
+            font-family: system-ui, -apple-system, sans-serif;
+            font-size: 14px;
+            line-height: 1.4;
+        `;
+        
+        notification.innerHTML = `
+            <div style="display: flex; align-items: flex-start; gap: 10px;">
+                <div style="font-size: 20px;">💳</div>
+                <div style="flex: 1;">
+                    <strong>AI Credits Exhausted</strong><br>
+                    <small>Your Astica API credits are low. The app will continue with basic analysis.</small><br>
+                    <a href="https://astica.ai/account" target="_blank" style="color: #007AFF; text-decoration: none; font-weight: 500;">Add Credits →</a>
+                </div>
+                <button onclick="this.parentElement.parentElement.remove()" style="background: none; border: none; font-size: 16px; cursor: pointer; color: #666;">×</button>
+            </div>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto-remove after 10 seconds
+        setTimeout(() => {
+            if (notification.parentElement) {
+                notification.remove();
+            }
+        }, 10000);
+        
+        // Remember we showed this notification
+        localStorage.setItem('billing_notification_shown', now.toString());
+    }
+
+    // ===== Testing and Debugging Functions =====
+    testTagGeneration() {
+        console.log('🧪 Testing tag generation...');
+        
+        // Test with mock data that could cause the error
+        const mockPhotoAnalysis = {
+            fallback: false,
+            tags: ['tag1', 'tag2', { name: 'tag3' }, null, undefined],
+            categories: ['category1', { name: 'category2' }, null, 'category3'],
+            objects: [{ name: 'object1' }, 'object2', { name: null }, undefined]
+        };
+        
+        try {
+            const result = this.generateEnhancedTags(mockPhotoAnalysis, 'test audio', 'test input');
+            console.log('✅ Tag generation test passed:', result);
+            return true;
+        } catch (error) {
+            console.error('❌ Tag generation test failed:', error);
+            return false;
+        }
+    }
+    
+    testJournalGeneration() {
+        console.log('🧪 Testing journal generation...');
+        
+        const mockPhotoAnalysis = {
+            fallback: false,
+            description: 'Test photo description',
+            detailedDescription: 'Test detailed description',
+            objects: [{ name: 'dog' }, { name: 'house' }],
+            faces: [{ age: 25, gender: 'female' }],
+            text: ['Hello', 'World'],
+            categories: ['outdoor', 'family'],
+            tags: ['nature', 'happy'],
+            confidence: 0.9
+        };
+        
+        try {
+            const result = this.generateJournalEntry(mockPhotoAnalysis, 'Test audio transcription', 'Test user input');
+            console.log('✅ Journal generation test passed');
+            return true;
+        } catch (error) {
+            console.error('❌ Journal generation test failed:', error);
+            return false;
+        }
     }
 }
 

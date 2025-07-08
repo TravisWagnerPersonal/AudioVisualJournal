@@ -1,5 +1,5 @@
 // ===== Service Worker for Audio-Photo Journal =====
-const CACHE_NAME = 'audio-photo-journal-v1.0.6';
+const CACHE_NAME = 'audio-photo-journal-v1.0.7';
 const RUNTIME_CACHE = 'runtime-cache-v1';
 
 // Core files to cache - using relative paths for better compatibility
