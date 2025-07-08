@@ -1010,39 +1010,6 @@ class CameraService {
         return { photoCount: 0, totalThumbnailSize: 0 };
     }
     
-    // ===== Legacy Support =====
-    
-    /**
-     * Legacy method for backward compatibility
-     */
-    openCamera(callback) {
-        if (typeof callback === 'function') {
-            this.legacyCallback = callback;
-        }
-        return this.openCamera();
-    }
-    
-    /**
-     * Legacy photo capture with callback
-     */
-    async capturePhotoLegacy() {
-        try {
-            const photoData = await this.capturePhoto();
-            if (this.legacyCallback) {
-                this.legacyCallback({
-                    dataUrl: photoData.thumbnail,
-                    type: photoData.metadata.type,
-                    id: photoData.id
-                });
-            }
-            return photoData;
-        } catch (error) {
-            if (this.legacyCallback) {
-                this.legacyCallback(null);
-            }
-            throw error;
-        }
-    }
 }
 
 // ===== Initialize Camera Service =====
@@ -1067,4 +1034,4 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 // Export for other modules
-window.CameraService = CameraService; 
+window.CameraService = CameraService;
