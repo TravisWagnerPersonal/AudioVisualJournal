@@ -23,9 +23,9 @@
     <link rel="apple-touch-startup-image" href="startup.png">
     
     <title>Audio-Photo Journal</title>
-    <link rel="stylesheet" href="styles.css">
-    <link rel="stylesheet" href="mobile.css">
-    <link rel="stylesheet" href="photo-viewer.css">
+    <link rel="stylesheet" href="styles.css?v=2.0">
+    <link rel="stylesheet" href="mobile.css?v=2.0">
+    <link rel="stylesheet" href="photo-viewer.css?v=2.0">
     
     <!-- Force deployment refresh - Modern Design v2.0 -->
 </head>
@@ -343,16 +343,39 @@
     </div>
 
     <!-- Scripts -->
-    <script src="app.js"></script>
-    <script src="journal.js"></script>
-    <script src="camera.js"></script>
-    <script src="audio.js"></script>
-    <script src="ai-services-improved.js"></script>
-    <script src="photo-manager.js"></script>
-    <script src="settings.js"></script>
+    <script src="debug.js"></script>    <script src="app.js?v=2.0?v=2.0"></script>
+    <script src="journal.js?v=2.0?v=2.0"></script>
+    <script src="camera.js?v=2.0?v=2.0"></script>
+    <script src="audio.js?v=2.0?v=2.0"></script>
+    <script src="ai-services-improved.js?v=2.0"></script>
+    <script src="photo-manager.js?v=2.0"></script>
+    <script src="settings.js?v=2.0?v=2.0"></script>
     
     <!-- Service Worker Registration -->
     <script>
+        console.log('🚀 Audio Journal Debug v2.0 - Starting...');
+        
+        // Debug: Check if key elements exist
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('📋 DOM Content Loaded - Checking elements...');
+            
+            const checks = [
+                'loading-screen',
+                'app',
+                'timeline-view',
+                'entries-container',
+                'empty-state'
+            ];
+            
+            checks.forEach(id => {
+                const element = document.getElementById(id);
+                console.log(`Element #${id}:`, element ? '✅ Found' : '❌ Missing');
+            });
+            
+            console.log('Navigation buttons:', document.querySelectorAll('.nav-btn').length);
+            console.log('App initialization should begin now...');
+        });
+        
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('sw.js')
