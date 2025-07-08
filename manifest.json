@@ -1,8 +1,8 @@
 {
   "name": "Audio-Photo Journal",
   "short_name": "Audio Journal",
-  "description": "Capture your thoughts, moments, and memories with audio recordings, photos, and text in a beautiful journaling app.",
-  "version": "1.0.0",
+  "description": "Capture your thoughts, moments, and memories with audio recordings, photos, and text in a beautiful journaling app optimized for iPhone.",
+  "version": "2.1.0",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait-primary",
@@ -13,16 +13,65 @@
   "categories": [
     "lifestyle",
     "productivity",
-    "utilities"
+    "utilities",
+    "social"
   ],
   
   "lang": "en",
   
   "icons": [
     {
+      "src": "icons/icon-57.png",
+      "type": "image/png",
+      "sizes": "57x57",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-60.png",
+      "type": "image/png", 
+      "sizes": "60x60",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-72.png",
+      "type": "image/png",
+      "sizes": "72x72", 
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-76.png",
+      "type": "image/png",
+      "sizes": "76x76",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-114.png",
+      "type": "image/png",
+      "sizes": "114x114",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-120.png",
+      "type": "image/png",
+      "sizes": "120x120",
+      "purpose": "any"
+    },
+    {
       "src": "icons/icon-144.png",
       "type": "image/png",
       "sizes": "144x144",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-152.png",
+      "type": "image/png",
+      "sizes": "152x152",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-180.png",
+      "type": "image/png",
+      "sizes": "180x180",
       "purpose": "any"
     },
     {
@@ -47,25 +96,32 @@
   
   "screenshots": [
     {
-      "src": "screenshots/mobile-1.png",
+      "src": "screenshots/iphone-timeline.png",
       "type": "image/png",
-      "sizes": "540x720",
+      "sizes": "375x812",
       "form_factor": "narrow",
-      "label": "Journal Timeline View"
+      "label": "Journal Timeline on iPhone"
     },
     {
-      "src": "screenshots/mobile-2.png",
+      "src": "screenshots/iphone-create.png", 
       "type": "image/png",
-      "sizes": "540x720",
+      "sizes": "375x812",
       "form_factor": "narrow",
-      "label": "Create New Entry"
+      "label": "Create Entry on iPhone"
     },
     {
-      "src": "screenshots/mobile-3.png",
-      "type": "image/png",
-      "sizes": "540x720",
+      "src": "screenshots/iphone-audio.png",
+      "type": "image/png", 
+      "sizes": "375x812",
       "form_factor": "narrow",
-      "label": "Audio Recording Interface"
+      "label": "Voice Recording on iPhone"
+    },
+    {
+      "src": "screenshots/iphone-settings.png",
+      "type": "image/png",
+      "sizes": "375x812", 
+      "form_factor": "narrow",
+      "label": "Settings on iPhone"
     }
   ],
   
@@ -75,7 +131,7 @@
   "shortcuts": [
     {
       "name": "New Entry",
-      "short_name": "New Entry",
+      "short_name": "New Entry", 
       "description": "Create a new journal entry",
       "url": "/?action=new-entry",
       "icons": [
@@ -88,8 +144,20 @@
     {
       "name": "Voice Note",
       "short_name": "Voice Note",
-      "description": "Quick voice recording",
+      "description": "Quick voice recording", 
       "url": "/?action=voice-note",
+      "icons": [
+        {
+          "src": "icons/icon-192.png",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Photo Journal",
+      "short_name": "Photo Journal",
+      "description": "Add photo with journal entry",
+      "url": "/?action=photo-journal", 
       "icons": [
         {
           "src": "icons/icon-192.png",
@@ -110,7 +178,7 @@
       "files": [
         {
           "name": "photos",
-          "accept": ["image/*"]
+          "accept": ["image/*", ".heic", ".heif"]
         }
       ]
     }
@@ -133,14 +201,24 @@
       "accept": {
         "text/plain": [".txt"],
         "application/json": [".json"],
-        "image/*": [".jpg", ".jpeg", ".png", ".webp", ".heic"]
+        "image/*": [".jpg", ".jpeg", ".png", ".webp", ".heic", ".heif"],
+        "audio/*": [".mp3", ".wav", ".m4a", ".aac"]
       }
     }
   ],
   
   "edge_side_panel": {
-    "preferred_width": 480
+    "preferred_width": 375
   },
   
-  "handle_links": "preferred"
+  "handle_links": "preferred",
+  
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
+  
+  "id": "audio-photo-journal",
+  
+  "iarc_rating_id": "e84b072d-71b3-4d3e-86ae-31a8ce4e53b7"
 } 

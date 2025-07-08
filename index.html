@@ -2,32 +2,58 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- Modern PWA Meta Tags -->
+    <!-- Enhanced iOS Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Audio Journal">
-    <meta name="theme-color" content="#6366f1">
-    <meta name="msapplication-TileColor" content="#6366f1">
+    <meta name="apple-touch-fullscreen" content="yes">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="#667eea">
+    <meta name="msapplication-TileColor" content="#667eea">
     
-    <!-- PWA Manifest -->
+    <!-- Enhanced PWA Manifest -->
     <link rel="manifest" href="manifest.json">
     
-    <!-- Icons -->
-    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-192.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+    <!-- Apple Touch Icons - Multiple Sizes for Different Devices -->
+    <link rel="apple-touch-icon" sizes="57x57" href="icons/icon-57.png">
+    <link rel="apple-touch-icon" sizes="60x60" href="icons/icon-60.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="icons/icon-72.png">
+    <link rel="apple-touch-icon" sizes="76x76" href="icons/icon-76.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="icons/icon-114.png">
+    <link rel="apple-touch-icon" sizes="120x120" href="icons/icon-120.png">
+    <link rel="apple-touch-icon" sizes="144x144" href="icons/icon-144.png">
+    <link rel="apple-touch-icon" sizes="152x152" href="icons/icon-152.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png">
+    <link rel="apple-touch-icon" sizes="192x192" href="icons/icon-192.png">
     
-    <!-- Startup Images -->
-    <link rel="apple-touch-startup-image" href="startup.png">
+    <!-- Apple Startup Images for Different iPhone Models -->
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="startup/startup-375x812.png">
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="startup/startup-414x896.png">
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)" href="startup/startup-414x896.png">
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="startup/startup-375x667.png">
+    <link rel="apple-touch-startup-image" media="screen and (device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)" href="startup/startup-320x568.png">
+    
+    <!-- Standard Icons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="icons/favicon-16x16.png">
+    <link rel="shortcut icon" href="favicon.ico">
     
     <title>Audio-Photo Journal</title>
-    <link rel="stylesheet" href="styles.css?v=2.0">
-    <link rel="stylesheet" href="mobile.css?v=2.0">
-    <link rel="stylesheet" href="photo-viewer.css?v=2.0">
     
-    <!-- Force deployment refresh - Modern Design v2.0 -->
+    <!-- Enhanced CSS Loading Order for iPhone Optimization -->
+    <link rel="stylesheet" href="styles.css?v=2.1">
+    <link rel="stylesheet" href="mobile.css?v=2.1">
+    <link rel="stylesheet" href="iphone-optimized.css?v=1.0">
+    <link rel="stylesheet" href="photo-viewer.css?v=2.1">
+    
+    <!-- Preload critical resources for better performance -->
+    <link rel="preload" href="enhanced-storage.js?v=2.0" as="script">
+    <link rel="preload" href="journal.js?v=2.1" as="script">
+    
+    <!-- Force deployment refresh - iPhone Optimized v2.1 -->
 </head>
 <body>
     

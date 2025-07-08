@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>iPhone Test & Debug - Audio Journal</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            min-height: 100vh;
+            padding-top: env(safe-area-inset-top);
+            padding-bottom: env(safe-area-inset-bottom);
+        }
+        
+        .container {
+            padding: 20px;
+            max-width: 414px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .test-section {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .test-section h3 {
+            margin-top: 0;
+            color: #fff;
+            font-size: 18px;
+        }
+        
+        .test-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .test-item:last-child {
+            border-bottom: none;
+        }
+        
+        .test-result {
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 12px;
+        }
+        
+        .pass {
+            background: #34c759;
+            color: white;
+        }
+        
+        .fail {
+            background: #ff3b30;
+            color: white;
+        }
+        
+        .warning {
+            background: #ff9500;
+            color: white;
+        }
+        
+        .info {
+            background: #007aff;
+            color: white;
+        }
+        
+        .btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            margin: 10px 0;
+            transition: all 0.2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        .btn:active {
+            transform: scale(0.98);
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        .device-info {
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .log {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin-top: 15px;
+        }
+        
+        .touch-test {
+            width: 60px;
+            height: 60px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.5);
+            border-radius: 30px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin: 5px;
+            font-size: 24px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .touch-test:active {
+            background: rgba(255, 255, 255, 0.4);
+            transform: scale(0.9);
+        }
+        
+        .touch-test.touched {
+            background: #34c759;
+            border-color: #34c759;
+        }
+        
+        .summary {
+            position: sticky;
+            bottom: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(20px);
+            border-radius: 12px;
+            padding: 15px;
+            text-align: center;
+            margin-top: 30px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🍎 iPhone Optimization Test</h1>
+            <p>Testing Audio-Photo Journal for iPhone compatibility</p>
+        </div>
+
+        <!-- Device Information -->
+        <div class="test-section">
+            <h3>📱 Device Information</h3>
+            <div class="device-info" id="device-info">
+                Loading device information...
+            </div>
+        </div>
+
+        <!-- Viewport & Display Tests -->
+        <div class="test-section">
+            <h3>📏 Viewport & Display Tests</h3>
+            <div id="viewport-tests"></div>
+        </div>
+
+        <!-- Touch & Interaction Tests -->
+        <div class="test-section">
+            <h3>👆 Touch & Interaction Tests</h3>
+            <p>Tap each circle to test touch targets (should be at least 44px):</p>
+            <div style="text-align: center;">
+                <div class="touch-test" data-size="30">30px</div>
+                <div class="touch-test" data-size="44">44px</div>
+                <div class="touch-test" data-size="60">60px</div>
+            </div>
+            <div id="touch-results"></div>
+        </div>
+
+        <!-- PWA Capabilities -->
+        <div class="test-section">
+            <h3>📲 PWA Capabilities</h3>
+            <div id="pwa-tests"></div>
+        </div>
+
+        <!-- Storage Tests -->
+        <div class="test-section">
+            <h3>💾 Storage Tests</h3>
+            <div id="storage-tests"></div>
+        </div>
+
+        <!-- Camera & Media Tests -->
+        <div class="test-section">
+            <h3>📷 Camera & Media Tests</h3>
+            <button class="btn" onclick="testCamera()">Test Camera Access</button>
+            <button class="btn" onclick="testMicrophone()">Test Microphone Access</button>
+            <div id="media-results"></div>
+        </div>
+
+        <!-- Performance Tests -->
+        <div class="test-section">
+            <h3>⚡ Performance Tests</h3>
+            <button class="btn" onclick="runPerformanceTests()">Run Performance Tests</button>
+            <div id="performance-results"></div>
+        </div>
+
+        <!-- Main App Test -->
+        <div class="test-section">
+            <h3>🧪 Main App Test</h3>
+            <button class="btn" onclick="testMainApp()">Open Main App</button>
+            <button class="btn" onclick="window.location.href='/'">Go to Journal App</button>
+        </div>
+
+        <!-- Debug Log -->
+        <div class="test-section">
+            <h3>🐛 Debug Log</h3>
+            <div class="log" id="debug-log"></div>
+            <button class="btn" onclick="clearLog()">Clear Log</button>
+        </div>
+
+        <!-- Test Summary -->
+        <div class="summary" id="test-summary">
+            <p>Run tests to see summary</p>
+        </div>
+    </div>
+
+    <script>
+        // Global test results
+        let testResults = {
+            total: 0,
+            passed: 0,
+            failed: 0,
+            warnings: 0
+        };
+
+        // Debug logging
+        function debugLog(message, type = 'info') {
+            const log = document.getElementById('debug-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const entry = `[${timestamp}] ${type.toUpperCase()}: ${message}\n`;
+            log.textContent += entry;
+            log.scrollTop = log.scrollHeight;
+            console.log(entry);
+        }
+
+        function clearLog() {
+            document.getElementById('debug-log').textContent = '';
+        }
+
+        // Test helper functions
+        function addTestResult(container, name, result, details = '') {
+            const item = document.createElement('div');
+            item.className = 'test-item';
+            
+            const resultClass = result === 'pass' ? 'pass' : 
+                              result === 'fail' ? 'fail' : 
+                              result === 'warning' ? 'warning' : 'info';
+            
+            item.innerHTML = `
+                <span>${name}</span>
+                <span class="test-result ${resultClass}">${result.toUpperCase()}</span>
+            `;
+            
+            if (details) {
+                const detailsDiv = document.createElement('div');
+                detailsDiv.style.fontSize = '12px';
+                detailsDiv.style.color = 'rgba(255, 255, 255, 0.8)';
+                detailsDiv.style.marginTop = '5px';
+                detailsDiv.textContent = details;
+                item.appendChild(detailsDiv);
+            }
+            
+            container.appendChild(item);
+            
+            // Update counters
+            testResults.total++;
+            if (result === 'pass') testResults.passed++;
+            else if (result === 'fail') testResults.failed++;
+            else if (result === 'warning') testResults.warnings++;
+            
+            updateSummary();
+        }
+
+        function updateSummary() {
+            const summary = document.getElementById('test-summary');
+            const percentage = testResults.total > 0 ? Math.round((testResults.passed / testResults.total) * 100) : 0;
+            summary.innerHTML = `
+                <strong>Test Summary</strong><br>
+                Passed: ${testResults.passed} | Failed: ${testResults.failed} | Warnings: ${testResults.warnings}<br>
+                Success Rate: ${percentage}%
+            `;
+        }
+
+        // Device Information Tests
+        function runDeviceTests() {
+            const deviceInfo = document.getElementById('device-info');
+            
+            const info = {
+                'User Agent': navigator.userAgent,
+                'Platform': navigator.platform,
+                'Screen Size': `${screen.width}×${screen.height}`,
+                'Window Size': `${window.innerWidth}×${window.innerHeight}`,
+                'Device Pixel Ratio': window.devicePixelRatio,
+                'Orientation': screen.orientation ? screen.orientation.type : 'unknown',
+                'Touch Support': 'ontouchstart' in window ? 'Yes' : 'No',
+                'Standalone Mode': window.navigator.standalone ? 'Yes' : 'No',
+                'Safe Area Top': getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-top)') || 'Not supported',
+                'Safe Area Bottom': getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-bottom)') || 'Not supported'
+            };
+
+            let html = '';
+            for (const [key, value] of Object.entries(info)) {
+                html += `<div class="test-item"><span>${key}:</span><span style="font-size: 12px;">${value}</span></div>`;
+            }
+            
+            deviceInfo.innerHTML = html;
+            debugLog('Device information collected');
+        }
+
+        // Viewport Tests
+        function runViewportTests() {
+            const container = document.getElementById('viewport-tests');
+            
+            // Test viewport width
+            const viewportWidth = window.innerWidth;
+            addTestResult(container, 'Viewport Width', 
+                viewportWidth >= 320 ? 'pass' : 'fail',
+                `${viewportWidth}px (min 320px for iPhone)`);
+            
+            // Test device pixel ratio
+            const dpr = window.devicePixelRatio;
+            addTestResult(container, 'Device Pixel Ratio',
+                dpr >= 2 ? 'pass' : 'warning',
+                `${dpr}x (iPhone typically 2x or 3x)`);
+            
+            // Test safe area support
+            const safeAreaTop = getComputedStyle(document.documentElement).getPropertyValue('env(safe-area-inset-top)');
+            addTestResult(container, 'Safe Area Support',
+                safeAreaTop !== '' ? 'pass' : 'warning',
+                safeAreaTop ? `Top: ${safeAreaTop}` : 'Not detected (older iPhone or browser)');
+            
+            // Test orientation
+            const orientation = screen.orientation ? screen.orientation.type : 'unknown';
+            addTestResult(container, 'Orientation API',
+                orientation !== 'unknown' ? 'pass' : 'warning',
+                orientation);
+            
+            debugLog('Viewport tests completed');
+        }
+
+        // Touch Tests
+        function setupTouchTests() {
+            const touchTargets = document.querySelectorAll('.touch-test');
+            const resultsDiv = document.getElementById('touch-results');
+            
+            touchTargets.forEach(target => {
+                target.addEventListener('touchstart', function(e) {
+                    e.preventDefault();
+                    this.classList.add('touched');
+                    const size = this.dataset.size;
+                    debugLog(`Touch target ${size}px touched`);
+                    
+                    // Update results
+                    const existing = resultsDiv.querySelector(`[data-size="${size}"]`);
+                    if (!existing) {
+                        const result = document.createElement('div');
+                        result.dataset.size = size;
+                        result.className = 'test-item';
+                        result.innerHTML = `
+                            <span>${size}px Touch Target</span>
+                            <span class="test-result ${size >= 44 ? 'pass' : 'warning'}">${size >= 44 ? 'PASS' : 'SMALL'}</span>
+                        `;
+                        resultsDiv.appendChild(result);
+                    }
+                });
+                
+                target.addEventListener('click', function(e) {
+                    if (!this.classList.contains('touched')) {
+                        this.classList.add('touched');
+                        const size = this.dataset.size;
+                        debugLog(`Touch target ${size}px clicked (mouse/trackpad)`);
+                    }
+                });
+            });
+        }
+
+        // PWA Tests
+        function runPWATests() {
+            const container = document.getElementById('pwa-tests');
+            
+            // Service Worker support
+            addTestResult(container, 'Service Worker Support',
+                'serviceWorker' in navigator ? 'pass' : 'fail',
+                'serviceWorker' in navigator ? 'Supported' : 'Not supported');
+            
+            // Manifest support
+            const manifestLink = document.querySelector('link[rel="manifest"]');
+            addTestResult(container, 'Web App Manifest',
+                manifestLink ? 'pass' : 'fail',
+                manifestLink ? 'Found' : 'Missing');
+            
+            // Add to Home Screen
+            addTestResult(container, 'Standalone Mode',
+                window.navigator.standalone ? 'pass' : 'info',
+                window.navigator.standalone ? 'Running as PWA' : 'Running in browser');
+            
+            // Storage API support
+            addTestResult(container, 'Storage API',
+                'storage' in navigator ? 'pass' : 'warning',
+                'storage' in navigator ? 'Supported' : 'Not supported');
+            
+            debugLog('PWA tests completed');
+        }
+
+        // Storage Tests
+        function runStorageTests() {
+            const container = document.getElementById('storage-tests');
+            
+            // LocalStorage
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                addTestResult(container, 'LocalStorage', 'pass', 'Working');
+            } catch (e) {
+                addTestResult(container, 'LocalStorage', 'fail', e.message);
+            }
+            
+            // IndexedDB
+            const idbSupported = 'indexedDB' in window;
+            addTestResult(container, 'IndexedDB', 
+                idbSupported ? 'pass' : 'fail',
+                idbSupported ? 'Supported' : 'Not supported');
+            
+            // Cache API
+            const cacheSupported = 'caches' in window;
+            addTestResult(container, 'Cache API',
+                cacheSupported ? 'pass' : 'fail',
+                cacheSupported ? 'Supported' : 'Not supported');
+            
+            // Storage quota
+            if (navigator.storage && navigator.storage.estimate) {
+                navigator.storage.estimate().then(estimate => {
+                    const quota = (estimate.quota / (1024 * 1024 * 1024)).toFixed(2);
+                    const usage = (estimate.usage / (1024 * 1024)).toFixed(2);
+                    addTestResult(container, 'Storage Quota',
+                        estimate.quota > 100 * 1024 * 1024 ? 'pass' : 'warning',
+                        `${quota}GB available, ${usage}MB used`);
+                    debugLog(`Storage: ${usage}MB used of ${quota}GB available`);
+                });
+            } else {
+                addTestResult(container, 'Storage Quota', 'warning', 'Not supported');
+            }
+            
+            debugLog('Storage tests completed');
+        }
+
+        // Camera Test
+        async function testCamera() {
+            const resultsDiv = document.getElementById('media-results');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                stream.getTracks().forEach(track => track.stop());
+                
+                const result = document.createElement('div');
+                result.className = 'test-item';
+                result.innerHTML = `
+                    <span>Camera Access</span>
+                    <span class="test-result pass">PASS</span>
+                `;
+                resultsDiv.appendChild(result);
+                debugLog('Camera access granted');
+            } catch (error) {
+                const result = document.createElement('div');
+                result.className = 'test-item';
+                result.innerHTML = `
+                    <span>Camera Access</span>
+                    <span class="test-result fail">FAIL</span>
+                `;
+                resultsDiv.appendChild(result);
+                debugLog(`Camera access failed: ${error.message}`);
+            }
+        }
+
+        // Microphone Test
+        async function testMicrophone() {
+            const resultsDiv = document.getElementById('media-results');
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                stream.getTracks().forEach(track => track.stop());
+                
+                const result = document.createElement('div');
+                result.className = 'test-item';
+                result.innerHTML = `
+                    <span>Microphone Access</span>
+                    <span class="test-result pass">PASS</span>
+                `;
+                resultsDiv.appendChild(result);
+                debugLog('Microphone access granted');
+            } catch (error) {
+                const result = document.createElement('div');
+                result.className = 'test-item';
+                result.innerHTML = `
+                    <span>Microphone Access</span>
+                    <span class="test-result fail">FAIL</span>
+                `;
+                resultsDiv.appendChild(result);
+                debugLog(`Microphone access failed: ${error.message}`);
+            }
+        }
+
+        // Performance Tests
+        function runPerformanceTests() {
+            const container = document.getElementById('performance-results');
+            
+            // Clear previous results
+            container.innerHTML = '';
+            
+            // Test 1: DOM manipulation speed
+            const startTime = performance.now();
+            for (let i = 0; i < 1000; i++) {
+                const div = document.createElement('div');
+                div.textContent = `Test ${i}`;
+                document.body.appendChild(div);
+                document.body.removeChild(div);
+            }
+            const domTime = performance.now() - startTime;
+            
+            const result1 = document.createElement('div');
+            result1.className = 'test-item';
+            result1.innerHTML = `
+                <span>DOM Manipulation (1000 ops)</span>
+                <span class="test-result ${domTime < 100 ? 'pass' : domTime < 200 ? 'warning' : 'fail'}">${domTime.toFixed(2)}ms</span>
+            `;
+            container.appendChild(result1);
+            
+            // Test 2: JSON parsing speed
+            const jsonStart = performance.now();
+            const largeObject = { data: new Array(10000).fill(0).map((_, i) => ({ id: i, name: `Item ${i}` })) };
+            const jsonString = JSON.stringify(largeObject);
+            JSON.parse(jsonString);
+            const jsonTime = performance.now() - jsonStart;
+            
+            const result2 = document.createElement('div');
+            result2.className = 'test-item';
+            result2.innerHTML = `
+                <span>JSON Parse (10K items)</span>
+                <span class="test-result ${jsonTime < 50 ? 'pass' : jsonTime < 100 ? 'warning' : 'fail'}">${jsonTime.toFixed(2)}ms</span>
+            `;
+            container.appendChild(result2);
+            
+            debugLog(`Performance tests: DOM ${domTime.toFixed(2)}ms, JSON ${jsonTime.toFixed(2)}ms`);
+        }
+
+        // Main App Test
+        function testMainApp() {
+            debugLog('Testing main app integration...');
+            
+            // Test if main app scripts are accessible
+            const scripts = [
+                'enhanced-storage.js',
+                'journal.js',
+                'audio.js',
+                'ai-services-improved.js'
+            ];
+            
+            scripts.forEach(script => {
+                fetch(script)
+                    .then(response => {
+                        debugLog(`${script}: ${response.ok ? 'Found' : 'Missing'} (${response.status})`);
+                    })
+                    .catch(error => {
+                        debugLog(`${script}: Error - ${error.message}`);
+                    });
+            });
+            
+            // Test Enhanced Storage availability
+            setTimeout(() => {
+                if (window.enhancedStorage) {
+                    debugLog('Enhanced Storage: Available');
+                } else {
+                    debugLog('Enhanced Storage: Not loaded');
+                }
+                
+                if (window.improvedAIServices) {
+                    debugLog('AI Services: Available');
+                } else {
+                    debugLog('AI Services: Not loaded');
+                }
+            }, 2000);
+        }
+
+        // Initialize all tests on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            debugLog('iPhone optimization test page loaded');
+            
+            // Run automatic tests
+            runDeviceTests();
+            runViewportTests();
+            runPWATests();
+            runStorageTests();
+            setupTouchTests();
+            
+            debugLog('Automatic tests completed. Try manual tests for camera, microphone, and performance.');
+        });
+
+        // Handle orientation changes
+        window.addEventListener('orientationchange', function() {
+            setTimeout(() => {
+                debugLog(`Orientation changed to: ${screen.orientation ? screen.orientation.type : 'unknown'}`);
+                runViewportTests();
+            }, 500);
+        });
+
+        // Handle visibility changes (important for PWAs)
+        document.addEventListener('visibilitychange', function() {
+            debugLog(`Page visibility: ${document.hidden ? 'hidden' : 'visible'}`);
+        });
+    </script>
+</body>
+</html> 

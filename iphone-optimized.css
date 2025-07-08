@@ -1,0 +1,550 @@
+/* ===== iPhone-Optimized Styles ===== */
+/* Following Apple Human Interface Guidelines and iPhone best practices */
+
+/* iPhone-specific viewport and base styles */
+@media only screen and (max-device-width: 480px) {
+    /* Use Helvetica (iPhone's default font) for optimal display */
+    body {
+        font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Helvetica, Arial, sans-serif;
+        -webkit-text-size-adjust: 100%;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+    
+    /* Prevent zoom on form inputs (iOS Safari) */
+    input, textarea, select {
+        font-size: 16px !important;
+    }
+}
+
+/* iPhone 6/7/8/SE (375px width) Optimizations */
+@media only screen and (device-width: 375px) and (-webkit-device-pixel-ratio: 2) {
+    .app-container {
+        min-height: 100vh;
+        min-height: -webkit-fill-available;
+    }
+    
+    /* Enhanced navigation for iPhone */
+    .nav {
+        padding: 8px 16px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border-top: 0.5px solid rgba(0, 0, 0, 0.1);
+    }
+    
+    .nav-btn {
+        min-width: 60px;
+        min-height: 44px; /* Apple's minimum touch target */
+        padding: 8px 12px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 500;
+        transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    
+    /* Optimized form inputs for iPhone */
+    .form-input, .form-textarea {
+        min-height: 44px;
+        padding: 12px 16px;
+        border-radius: 12px;
+        border: 1px solid #e1e5e9;
+        background: #ffffff;
+        font-size: 16px;
+        line-height: 1.5;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+    
+    .form-textarea {
+        min-height: 88px;
+        resize: vertical;
+    }
+    
+    /* Enhanced buttons for iPhone touch */
+    .btn {
+        min-height: 44px;
+        padding: 12px 20px;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+    }
+    
+    /* Record button optimization for iPhone */
+    .record-button {
+        width: 80px;
+        height: 80px;
+        border-radius: 40px;
+        font-size: 32px;
+        background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+        box-shadow: 0 8px 32px rgba(255, 107, 107, 0.3);
+        transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    
+    .record-button:active {
+        transform: scale(0.95);
+        box-shadow: 0 4px 16px rgba(255, 107, 107, 0.4);
+    }
+    
+    /* Mood selector optimization */
+    .mood-option {
+        width: 48px;
+        height: 48px;
+        border-radius: 24px;
+        font-size: 24px;
+        background: #f8f9fa;
+        border: 2px solid transparent;
+        transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    
+    .mood-option.selected {
+        background: #e3f2fd;
+        border-color: #2196f3;
+        transform: scale(1.1);
+    }
+    
+    /* Photo controls for iPhone */
+    .media-control {
+        min-height: 56px;
+        padding: 16px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #667eea, #764ba2);
+        color: white;
+        text-align: center;
+        transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    }
+    
+    .media-control:active {
+        transform: scale(0.98);
+    }
+}
+
+/* iPhone Plus/Max (414px width) Optimizations */
+@media only screen and (device-width: 414px) and (-webkit-device-pixel-ratio: 3) {
+    .app-header {
+        padding: 16px 20px;
+    }
+    
+    .app-title {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+    }
+    
+    .app-subtitle {
+        font-size: 16px;
+        margin-top: 4px;
+    }
+    
+    /* Enhanced card layouts for larger iPhones */
+    .card {
+        border-radius: 20px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08);
+        margin-bottom: 20px;
+    }
+    
+    .section {
+        padding: 20px;
+    }
+    
+    .section-title {
+        font-size: 20px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        color: #1a1a1a;
+    }
+    
+    /* Better grid layout for larger screens */
+    .entries-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+        padding: 20px;
+    }
+    
+    .mood-options {
+        gap: 16px;
+        padding: 20px 0;
+    }
+    
+    .mood-option {
+        width: 52px;
+        height: 52px;
+        font-size: 26px;
+    }
+}
+
+/* iPhone 12/13/14 Pro Max (428px width) Optimizations */
+@media only screen and (device-width: 428px) and (-webkit-device-pixel-ratio: 3) {
+    .main-content {
+        padding: 0 24px;
+    }
+    
+    .nav {
+        padding: 12px 24px;
+    }
+    
+    .entries-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        padding: 24px;
+    }
+    
+    /* Two-column layout for better space usage */
+    .media-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+    }
+    
+    .btn-group {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+    }
+    
+    .btn-group .btn {
+        flex: 1;
+        min-width: 120px;
+    }
+}
+
+/* iPhone X/11/12/13/14 (with notch) Safe Area Support */
+@supports (padding: max(0px)) {
+    .app-container {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+    }
+    
+    .app-header {
+        padding-top: max(env(safe-area-inset-top, 0px), 16px);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+    }
+    
+    .nav-container {
+        padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        position: sticky;
+        bottom: 0;
+        z-index: 100;
+    }
+    
+    .photo-viewer-modal {
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+    }
+}
+
+/* iOS-specific touch enhancements */
+@media only screen and (-webkit-min-device-pixel-ratio: 2) {
+    /* Smooth scrolling momentum */
+    .main-content {
+        -webkit-overflow-scrolling: touch;
+        overflow-scrolling: touch;
+    }
+    
+    /* Remove tap highlights */
+    * {
+        -webkit-tap-highlight-color: transparent;
+        -webkit-focus-ring-color: transparent;
+        -webkit-touch-callout: none;
+    }
+    
+    /* Improved button feedback */
+    .btn:active,
+    .nav-btn:active,
+    .mood-option:active,
+    .media-control:active {
+        transform: scale(0.96);
+        opacity: 0.8;
+    }
+    
+    /* Enhanced input focus states */
+    .form-input:focus,
+    .form-textarea:focus {
+        border-color: #007aff;
+        box-shadow: 0 0 0 3px rgba(0, 122, 255, 0.1);
+        outline: none;
+    }
+    
+    /* iOS-style switches for settings */
+    .form-label input[type="checkbox"] {
+        appearance: none;
+        -webkit-appearance: none;
+        width: 51px;
+        height: 31px;
+        background: #e9e9ea;
+        border-radius: 16px;
+        position: relative;
+        transition: all 0.2s;
+        cursor: pointer;
+    }
+    
+    .form-label input[type="checkbox"]:checked {
+        background: #34c759;
+    }
+    
+    .form-label input[type="checkbox"]:before {
+        content: '';
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 27px;
+        height: 27px;
+        background: white;
+        border-radius: 50%;
+        transition: all 0.2s;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+    
+    .form-label input[type="checkbox"]:checked:before {
+        transform: translateX(20px);
+    }
+}
+
+/* Dark mode support for iPhone */
+@media (prefers-color-scheme: dark) {
+    body {
+        background: #000000;
+        color: #ffffff;
+    }
+    
+    .card {
+        background: #1c1c1e;
+        border: 1px solid #2c2c2e;
+    }
+    
+    .form-input,
+    .form-textarea {
+        background: #1c1c1e;
+        border-color: #2c2c2e;
+        color: #ffffff;
+    }
+    
+    .nav {
+        background: rgba(28, 28, 30, 0.95);
+        border-top-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    .app-header {
+        background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2e 100%);
+    }
+    
+    .btn-secondary {
+        background: #2c2c2e;
+        color: #ffffff;
+        border-color: #3a3a3c;
+    }
+    
+    .mood-option {
+        background: #2c2c2e;
+        border-color: #3a3a3c;
+    }
+    
+    .mood-option.selected {
+        background: #1e3a8a;
+        border-color: #3b82f6;
+    }
+}
+
+/* Reduce motion for accessibility */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .btn {
+        border: 2px solid currentColor;
+    }
+    
+    .form-input,
+    .form-textarea {
+        border: 2px solid currentColor;
+    }
+    
+    .card {
+        border: 2px solid currentColor;
+    }
+}
+
+/* Landscape orientation optimizations for iPhone */
+@media only screen and (max-device-width: 896px) and (orientation: landscape) {
+    .app-header {
+        padding: 8px 20px;
+    }
+    
+    .app-title {
+        font-size: 24px;
+    }
+    
+    .app-subtitle {
+        font-size: 14px;
+    }
+    
+    .main-content {
+        padding: 16px 20px;
+    }
+    
+    .nav {
+        padding: 6px 20px;
+    }
+    
+    .nav-btn {
+        min-height: 36px;
+        padding: 6px 10px;
+        font-size: 11px;
+    }
+    
+    .record-button {
+        width: 60px;
+        height: 60px;
+        font-size: 24px;
+    }
+    
+    .mood-option {
+        width: 40px;
+        height: 40px;
+        font-size: 20px;
+    }
+    
+    /* Two-column layout in landscape */
+    .journal-form {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        align-items: start;
+    }
+    
+    .section:last-child {
+        grid-column: 1 / -1;
+    }
+}
+
+/* iPhone-specific loading optimizations */
+.loading {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* iPhone-specific photo viewer optimizations */
+.photo-viewer-modal {
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+}
+
+.photo-viewer-close {
+    top: max(env(safe-area-inset-top, 0px), 16px);
+    right: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 22px;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    border: none;
+    font-size: 24px;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* Performance optimizations for iPhone */
+.card,
+.btn,
+.nav-btn,
+.mood-option,
+.media-control {
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    perspective: 1000px;
+}
+
+/* iPhone-specific text rendering */
+h1, h2, h3, h4, h5, h6 {
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* Enhanced accessibility for iPhone VoiceOver */
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* Focus indicators for keyboard navigation */
+.btn:focus-visible,
+.nav-btn:focus-visible,
+.form-input:focus-visible,
+.form-textarea:focus-visible {
+    outline: 2px solid #007aff;
+    outline-offset: 2px;
+}
+
+/* iPhone-specific animations */
+.fade-in {
+    animation: fadeIn 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.slide-up {
+    animation: slideUp 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(100%);
+    }
+    to {
+        transform: translateY(0);
+    }
+} 
