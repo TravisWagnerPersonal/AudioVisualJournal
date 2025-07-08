@@ -49,82 +49,74 @@ class EnhancedPWAStorage {
     }
     
     async waitForDBReady() {
-        // Wait a bit more to ensure all object stores are created
-        return new Promise((resolve) => {
-            setTimeout(() => {
-                if (this.db && this.db.objectStoreNames.contains('entries')) {
-                    console.log('✅ IndexedDB is ready with all object stores');
-                    resolve();
-                } else {
-                    console.warn('⚠️ IndexedDB not fully ready, using fallback timing');
-                    resolve(); // Don't block, but log warning
-                }
-            }, 100);
-        });
+        if (this.db && this.db.objectStoreNames.contains('entries')) {
+            return;
+        }
+        
+        // Wait for database to be ready with proper timeout
+        const startTime = Date.now();
+        const timeout = 10000; // 10 seconds
+        
+        while (Date.now() - startTime < timeout) {
+            if (this.db && 
+                this.db.objectStoreNames.contains('entries') && 
+                this.db.objectStoreNames.contains('mediaMetadata') &&
+                this.db.objectStoreNames.contains('settings') &&
+                this.db.objectStoreNames.contains('storageAnalytics')) {
+                console.log('✅ Enhanced storage database is ready');
+                return;
+            }
+            await new Promise(resolve => setTimeout(resolve, 100));
+        }
+        
+        throw new Error('Database initialization timeout');
     }
     
     // ===== IndexedDB Setup =====
     async initIndexedDB() {
         return new Promise((resolve, reject) => {
-            console.log('📊 Setting up IndexedDB...');
-            
             const request = indexedDB.open(this.dbName, this.dbVersion);
             
             request.onerror = () => {
-                reject(new Error('Failed to open IndexedDB'));
+                console.error('Failed to open IndexedDB:', request.error);
+                reject(request.error);
             };
             
-            request.onsuccess = (event) => {
-                this.db = event.target.result;
-                console.log('✅ IndexedDB connected');
-                resolve(this.db);
+            request.onsuccess = () => {
+                this.db = request.result;
+                console.log('✅ IndexedDB opened successfully');
+                
+                // Wait a bit more for the database to be fully ready
+                setTimeout(() => {
+                    resolve();
+                }, 100);
             };
             
             request.onupgradeneeded = (event) => {
                 const db = event.target.result;
-                console.log('🔄 Upgrading IndexedDB schema...');
                 
-                // Journal Entries Store
+                // Create object stores
                 if (!db.objectStoreNames.contains('entries')) {
-                    const entriesStore = db.createObjectStore('entries', {
-                        keyPath: 'id',
-                        autoIncrement: false
-                    });
-                    
+                    const entriesStore = db.createObjectStore('entries', { keyPath: 'id' });
                     entriesStore.createIndex('createdAt', 'createdAt', { unique: false });
-                    entriesStore.createIndex('updatedAt', 'updatedAt', { unique: false });
                     entriesStore.createIndex('tags', 'tags', { unique: false, multiEntry: true });
-                    entriesStore.createIndex('mood', 'mood', { unique: false });
                 }
                 
-                // Media Metadata Store
                 if (!db.objectStoreNames.contains('mediaMetadata')) {
-                    const mediaStore = db.createObjectStore('mediaMetadata', {
-                        keyPath: 'id',
-                        autoIncrement: false
-                    });
-                    
+                    const mediaStore = db.createObjectStore('mediaMetadata', { keyPath: 'id' });
                     mediaStore.createIndex('entryId', 'entryId', { unique: false });
-                    mediaStore.createIndex('type', 'type', { unique: false });
-                    mediaStore.createIndex('size', 'size', { unique: false });
                     mediaStore.createIndex('createdAt', 'createdAt', { unique: false });
                 }
                 
-                // Settings Store
                 if (!db.objectStoreNames.contains('settings')) {
-                    const settingsStore = db.createObjectStore('settings', {
-                        keyPath: 'key'
-                    });
+                    db.createObjectStore('settings', { keyPath: 'key' });
                 }
                 
-                // Storage Analytics Store
                 if (!db.objectStoreNames.contains('storageAnalytics')) {
-                    const analyticsStore = db.createObjectStore('storageAnalytics', {
-                        keyPath: 'timestamp'
-                    });
+                    db.createObjectStore('storageAnalytics', { keyPath: 'timestamp' });
                 }
                 
-                console.log('✅ IndexedDB schema updated');
+                console.log('✅ IndexedDB object stores created');
             };
         });
     }
@@ -202,11 +194,8 @@ class EnhancedPWAStorage {
     
     async updateStorageAnalytics(quota) {
         try {
-            // Check if database and object store are ready
-            if (!this.db || !this.db.objectStoreNames.contains('storageAnalytics')) {
-                console.log('⚠️ StorageAnalytics store not ready yet, skipping analytics update');
-                return;
-            }
+            // Ensure database is ready before accessing
+            await this.waitForDBReady();
             
             const transaction = this.db.transaction(['storageAnalytics'], 'readwrite');
             const store = transaction.objectStore('storageAnalytics');
@@ -238,6 +227,9 @@ class EnhancedPWAStorage {
     // ===== Journal Entry Operations =====
     async storeEntry(entryData) {
         try {
+            // Wait for database to be ready
+            await this.waitForDBReady();
+            
             console.log('💾 Storing journal entry:', entryData.id);
             
             // Separate media from text data
@@ -459,6 +451,9 @@ class EnhancedPWAStorage {
     
     async getAllEntries() {
         try {
+            // Wait for database to be ready
+            await this.waitForDBReady();
+            
             const transaction = this.db.transaction(['entries'], 'readonly');
             const store = transaction.objectStore('entries');
             const index = store.index('createdAt');
@@ -616,12 +611,8 @@ class EnhancedPWAStorage {
     // ===== Draft Management =====
     async storeDraft(draftData) {
         try {
-            // Check if database and object store are ready
-            if (!this.db || !this.db.objectStoreNames.contains('settings')) {
-                console.log('⚠️ Settings store not ready yet, falling back to localStorage for draft');
-                localStorage.setItem('journal_draft', JSON.stringify(draftData));
-                return;
-            }
+            // Wait for database to be ready
+            await this.waitForDBReady();
             
             const transaction = this.db.transaction(['settings'], 'readwrite');
             const store = transaction.objectStore('settings');
@@ -645,12 +636,8 @@ class EnhancedPWAStorage {
     
     async getDraft() {
         try {
-            // Check if database and object store are ready
-            if (!this.db || !this.db.objectStoreNames.contains('settings')) {
-                console.log('⚠️ Settings store not ready yet, falling back to localStorage for draft');
-                const saved = localStorage.getItem('journal_draft');
-                return saved ? JSON.parse(saved) : null;
-            }
+            // Wait for database to be ready
+            await this.waitForDBReady();
             
             const transaction = this.db.transaction(['settings'], 'readonly');
             const store = transaction.objectStore('settings');
@@ -673,23 +660,19 @@ class EnhancedPWAStorage {
     async clearDraft() {
         try {
             // Clear from IndexedDB if available
-            if (this.db && this.db.objectStoreNames.contains('settings')) {
-                const transaction = this.db.transaction(['settings'], 'readwrite');
-                const store = transaction.objectStore('settings');
-                await this.promisifyRequest(store.delete('currentDraft'));
-            }
+            await this.waitForDBReady();
             
-            // Also clear from localStorage (for migration purposes)
+            const transaction = this.db.transaction(['settings'], 'readwrite');
+            const store = transaction.objectStore('settings');
+            await this.promisifyRequest(store.delete('currentDraft'));
+            
+            // Also clear from localStorage as fallback
             localStorage.removeItem('journal_draft');
             
         } catch (error) {
-            console.warn('Failed to clear draft:', error.message);
-            // Try localStorage fallback
-            try {
-                localStorage.removeItem('journal_draft');
-            } catch (fallbackError) {
-                console.error('Failed to clear draft from localStorage too:', fallbackError);
-            }
+            console.warn('Failed to clear draft from IndexedDB:', error.message);
+            // Always clear localStorage as fallback
+            localStorage.removeItem('journal_draft');
         }
     }
     

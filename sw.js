@@ -96,17 +96,144 @@ self.addEventListener('fetch', (event) => {
     const { request } = event;
     const url = new URL(request.url);
     
-    // Skip non-GET requests - Cache API only supports GET requests
-    if (request.method !== 'GET') {
-        // Let POST, PUT, DELETE requests pass through without caching
-        event.respondWith(fetch(request));
-        return;
+    // Handle network requests
+    async function handleRequest(request) {
+        const url = new URL(request.url);
+        
+        // Only cache GET requests - Cache API doesn't support POST, PUT, DELETE, etc.
+        if (request.method !== 'GET') {
+            console.log('🔄 Non-GET request, bypassing cache:', request.method, url.pathname);
+            return fetch(request);
+        }
+        
+        // Check if request is for app files
+        if (url.origin === self.location.origin) {
+            // App files - use cache-first strategy
+            return handleAppRequest(request);
+        }
+        
+        // External requests (APIs, etc.) - use network-first strategy
+        return handleExternalRequest(request);
     }
-    
-    // Handle different types of GET requests
+
+    // Handle app file requests with cache-first strategy
+    async function handleAppRequest(request) {
+        const url = new URL(request.url);
+        
+        // Only cache GET requests
+        if (request.method !== 'GET') {
+            return fetch(request);
+        }
+        
+        try {
+            // Check cache first
+            const cachedResponse = await caches.match(request);
+            if (cachedResponse) {
+                console.log('📦 Serving from cache:', url.pathname);
+                return cachedResponse;
+            }
+            
+            // If not in cache, fetch from network
+            const response = await fetch(request);
+            
+            // Cache successful responses
+            if (response.ok) {
+                const cache = await caches.open(CACHE_NAME);
+                // Clone the response before caching (response can only be used once)
+                await cache.put(request, response.clone());
+                console.log('💾 Cached new resource:', url.pathname);
+            }
+            
+            return response;
+            
+        } catch (error) {
+            console.error('❌ Failed to handle app request:', error);
+            // Return cached version if available
+            const cachedResponse = await caches.match(request);
+            if (cachedResponse) {
+                return cachedResponse;
+            }
+            // Return offline page or error response
+            return new Response('Offline', { status: 503 });
+        }
+    }
+
+    // Handle external requests with network-first strategy
+    async function handleExternalRequest(request) {
+        // Only cache GET requests
+        if (request.method !== 'GET') {
+            return fetch(request);
+        }
+        
+        try {
+            // Try network first
+            const response = await fetch(request);
+            
+            // Cache successful responses for external resources
+            if (response.ok && response.type === 'basic') {
+                const cache = await caches.open(CACHE_NAME);
+                await cache.put(request, response.clone());
+            }
+            
+            return response;
+            
+        } catch (error) {
+            console.log('🔄 Network failed, trying cache:', request.url);
+            // Fallback to cache
+            const cachedResponse = await caches.match(request);
+            if (cachedResponse) {
+                return cachedResponse;
+            }
+            throw error;
+        }
+    }
+
+    // Handle default requests (fallback)
+    async function handleDefaultRequest(request) {
+        const url = new URL(request.url);
+        
+        // Only handle GET requests - skip POST, PUT, DELETE, etc.
+        if (request.method !== 'GET') {
+            console.log('🔄 Non-GET request, bypassing service worker:', request.method, url.pathname);
+            return fetch(request);
+        }
+        
+        try {
+            // Try cache first
+            const cachedResponse = await caches.match(request);
+            if (cachedResponse) {
+                console.log('📦 Serving from cache:', url.pathname);
+                return cachedResponse;
+            }
+            
+            // Fallback to network
+            const response = await fetch(request);
+            
+            // Cache successful responses
+            if (response.ok) {
+                const cache = await caches.open(CACHE_NAME);
+                await cache.put(request, response.clone());
+                console.log('💾 Cached resource:', url.pathname);
+            }
+            
+            return response;
+            
+        } catch (error) {
+            console.error('❌ Request failed:', error);
+            // Try to serve from cache as last resort
+            const cachedResponse = await caches.match(request);
+            if (cachedResponse) {
+                return cachedResponse;
+            }
+            // Return error response
+            return new Response('Service Unavailable', { status: 503 });
+        }
+    }
+
+    // Determine which handler to use
     if (url.pathname.includes('/api/')) {
         // API requests - network first with offline fallback
-        event.respondWith(handleAPIRequest(request));
+        event.respondWith(handleRequest(request));
     } else if (isMediaRequest(request)) {
         // Media files - cache first with enhanced storage
         event.respondWith(handleMediaRequest(request));
